@@ -17,6 +17,11 @@ time, `next.config.ts` then installs rewrites:
 - A browser asset that the Vercel build does not have (a script chunk of a page the VM rendered)
   falls through to the VM.
 
+The VM image must be **built** with `TAKASATS_ASSET_PREFIX=/_vm` (an environment variable when you
+run `docker compose build`). Vercel answers `/_next/static` itself and never forwards a file it does
+not have, so the VM's page scripts live under `/_vm/_next/static` instead. The prefix is harmless
+when the VM is also used directly, and it is not needed on a deployment that has no Vercel in front.
+
 The browser therefore sees one origin (`taka.afribit.africa`), so cookies, photo uploads and sync
 calls remain same-origin. Leave this variable unset on the VM; setting it there would create a
 proxy loop.
