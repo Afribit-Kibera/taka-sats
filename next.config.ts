@@ -24,6 +24,17 @@ const PUBLIC_PATHS = [
 ].join('|');
 const PROXIED_SOURCE = `/:path((?!${PUBLIC_PATHS}).+)`;
 
+/**
+ * Optional path prefix for this build's own browser assets, for the origin that sits behind the
+ * Vercel domain (the VM sets it to `/_vm`). Vercel answers `/_next/static/*` itself and never
+ * forwards a file it does not have, so the VM's page chunks would 404 if they kept that path.
+ * Under a prefix the request is forwarded like any other signed-in path, and the VM maps it back.
+ */
+const assetPrefix = process.env.TAKASATS_ASSET_PREFIX?.replace(/\/$/, '') || undefined;
+if (assetPrefix && !assetPrefix.startsWith('/')) {
+  throw new Error('TAKASATS_ASSET_PREFIX must be a path starting with /');
+}
+
 const apiOrigin = process.env.TAKASATS_API_ORIGIN?.replace(/\/$/, '');
 if (apiOrigin && !URL.canParse(apiOrigin)) {
   throw new Error('TAKASATS_API_ORIGIN must be an absolute URL');
@@ -82,6 +93,7 @@ export function buildSecurityHeaders(dev = process.env.NODE_ENV !== 'production'
 }
 
 const nextConfig: NextConfig = {
+  ...(assetPrefix ? { assetPrefix } : {}),
   async headers() {
     return [{ source: '/:path*', headers: buildSecurityHeaders() }];
   },
@@ -113,7 +125,20 @@ const nextConfig: NextConfig = {
           };
         },
       }
-    : {}),
+    : assetPrefix
+      ? {
+          // This is the VM build: map the prefixed asset path back to Next's own static handler.
+          async rewrites() {
+            return {
+              beforeFiles: [
+                { source: `${assetPrefix}/_next/:path*`, destination: '/_next/:path*' },
+              ],
+              afterFiles: [],
+              fallback: [],
+            };
+          },
+        }
+      : {}),
 };
 
 export default withSerwist(withNextIntl(nextConfig));

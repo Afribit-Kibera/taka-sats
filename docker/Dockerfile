@@ -13,6 +13,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Optional: serve this build's browser assets under a path prefix (see next.config.ts). Empty by default.
+ARG TAKASATS_ASSET_PREFIX=
+ENV TAKASATS_ASSET_PREFIX=$TAKASATS_ASSET_PREFIX
 RUN pnpm build
 
 FROM node:24.20.0-alpine AS app

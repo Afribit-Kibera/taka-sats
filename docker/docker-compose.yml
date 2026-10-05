@@ -73,6 +73,8 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
       target: app
+      args:
+        TAKASATS_ASSET_PREFIX: ${TAKASATS_ASSET_PREFIX:-}
     restart: unless-stopped
     environment: *app-environment
     ports:
