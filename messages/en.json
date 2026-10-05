@@ -1171,5 +1171,27 @@
     "body": "This is a collector credential for the Taka Sats recycling programme. Collection staff scan it in the Taka Sats app to find the collector and record a weigh.",
     "privacy": "This page shows no personal details and cannot be used to pay anyone.",
     "home": "About Taka Sats"
+  },
+  "Cards": {
+    "title": "Write a collector card",
+    "intro": "Use an Android phone with Chrome and NFC switched on. Use a blank NTAG card. The card only carries the collector's code. It cannot hold or spend money.",
+    "searchLabel": "Find the collector (name or code)",
+    "searchPlaceholder": "Start typing a name or code",
+    "notApproved": "This collector is not approved yet. A hub lead or admin must approve them first.",
+    "writeButton": "Write card",
+    "writing": "Hold a blank card to the back of the phone",
+    "saved": "Card ready. It carries {code}. Card serial:",
+    "readButton": "Check a card",
+    "reading": "Hold the card to the phone",
+    "readPayload": "Card says",
+    "readCollector": "Linked to",
+    "readEmpty": "nothing",
+    "readUnlinked": "nobody yet",
+    "loadFailed": "Could not load that collector. Try again.",
+    "writeFailed": "Could not write the card. Hold it steady against the back of the phone and try again.",
+    "readFailed": "Could not read the card. Try again.",
+    "linkFailed": "The card was written but could not be linked to the collector. Try again.",
+    "cardTaken": "That card is already linked to someone else. Use a different card.",
+    "unavailable": "This phone or browser cannot use NFC. Use Chrome on an Android phone."
   }
 }

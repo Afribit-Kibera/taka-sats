@@ -24,6 +24,17 @@ record, and are what encodes the LNURL-pay link / Lightning Address written at e
 **Default: NTAG213.** It is cheaper, bulk-provisions faster, and the payload is short.
 Move to NTAG216 only if a future payload (e.g. a longer provisioned LNURLp URL) doesn't fit.
 
+## Writing cards
+
+Cards are written from an Android phone with Chrome and NFC switched on, using the **Write a collector
+card** page (`/cards` on your deployment, signed in as staff). Search for an approved collector, press
+**Write card**, and hold a blank card to the back of the phone. The page writes two records, the
+`takasats:<code>` reference and the `<base>/c/<code>` link, then reads the chip serial and links it to
+the collector so a tap on the weigh screen finds them. **Check a card** reads one back and shows what it
+says and who it is linked to. A card carries an identity pointer only: it cannot hold or spend money.
+A collector must be approved before a card can be linked. Web NFC works only on Android Chrome over
+https, so a desktop computer cannot write cards.
+
 ## Form factor
 
 **IP67/IP68-rated** (FR-1.5) in one of two shapes, both wearable on a lanyard:
