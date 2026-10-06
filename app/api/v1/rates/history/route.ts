@@ -10,7 +10,7 @@ import { rateHistory } from '@/lib/rates';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('rates:read');
+    await requireScope('rates:read', request);
     const material = request.nextUrl.searchParams.get('material') ?? undefined;
     return NextResponse.json({ rates: await rateHistory(getDb(), material) });
   } catch (error) {

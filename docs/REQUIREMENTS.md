@@ -14,6 +14,20 @@
 
 ## 0. How to use this document
 
+### API-first operator access clarification (2026-10-06)
+
+The supervisor field app is the primary operational UI. Supervisors register collectors and manage
+identity-card association; collectors have no login. Operators consume the documented API from their
+own dashboards rather than requiring another standalone admin dashboard. The existing bundled console
+is an optional reference client. This clarifies D-01, not a change to the current four-role permissions
+or collector-authorization gate. Identity cards may be attached while pending, without authorizing
+weighing or payment; revoked collectors cannot receive new tags. See [API integration](API_INTEGRATION.md).
+
+Dashboard auth supports administrator-owned, scoped, expiring/revocable bearer API keys (migration0014).
+Management is administrator-session-only; grants intersect the active owner's current role, including
+nested domain checks. No execution grant, arbitrary staff impersonation, browser-page login or
+self-approval bypass is introduced.
+
 ### Current implementation override (2026-10-06, D-29)
 
 [ADR-0021](adr/0021-field-first-risk-based-payments.md) and [BACKEND.md](BACKEND.md) supersede the
@@ -318,7 +332,7 @@ A supervisor enrols a collector with **one required field: `alias`** (a name or 
 **Path A - Bring-your-own wallet (`address_source = 'byo'`; shipped default).**
 1. The collector shows their own payment QR - a **Blink POS / Paycode**, a Lightning Address, or any LNURL-pay code.
 2. The PWA scans it (camera), normalises it to a Lightning Address / LNURL-pay link, and validates it is **receive-capable and resolvable** (a `LNURLp` GET, or an address probe) - a withdraw (`LNURLw`) code is rejected.
-3. The validated address is stored as the collector's primary payment destination (D-26). A physical tag, if the programme uses one, carries only `takasats:<public_code>` (D-24) and is issued only to an authorized collector (D-25); the mapping is recorded in `tag_history`.
+3. The validated address is stored as the collector's primary payment destination (D-26). A physical tag, if the programme uses one, carries only `takasats:<public_code>` (D-24). Identity tagging is permitted while pending (2026-10-06 clarification), but weighing/payment still require authorization (D-25); the mapping is recorded in `tag_history`.
 4. Afribit never creates or holds a wallet for this collector. Their earnings land in their own account the instant a payout is sent - this is what keeps an operator without a virtual-asset licence out of custodial scope.
 
 **Path B - Program-provisioned wallet (`address_source = 'provisioned'`; opt-in, requires `settings.custody.provisioning_enabled = true` + G1).**

@@ -15,7 +15,12 @@ import { sql } from 'drizzle-orm';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { getDb } from '@/lib/db/client';
 import { collectors, tagHistory } from '@/lib/db/schema';
-import { createStaff, resetCollectorTables, type StaffFixture } from '@/lib/testing/fixtures';
+import {
+  createCollector,
+  createStaff,
+  resetCollectorTables,
+  type StaffFixture,
+} from '@/lib/testing/fixtures';
 import {
   CollectorNotAuthorizedError,
   enrolCollector,
@@ -152,15 +157,24 @@ describe.skipIf(!hasDatabase)('lib/collectors (integration)', () => {
       expect(result).toBeNull();
     });
 
-    it('refuses to issue a tag to a collector who is not authorized (D-25)', async () => {
+    it('issues an identity card while pending without authorizing the collector', async () => {
       const supervisor = await createStaff(db, 'supervisor');
       const pending = await enrolCollector(db, { alias: 'Pending' }, supervisor);
       expect(pending.status).toBe('pending');
 
+      await reissueTag(db, { collectorId: pending.id, newTagId: 'TAG-PENDING' });
+      const mapping = await findActiveTagMapping(db, 'TAG-PENDING');
+      expect(mapping?.collector.status).toBe('pending');
+      expect(mapping?.collector.authorizedBy).toBeNull();
+      expect(mapping?.collector.authorizedAt).toBeNull();
+    });
+
+    it('refuses to issue an identity card to a revoked collector', async () => {
+      const revoked = await createCollector(db, { status: 'revoked' });
       await expect(
-        reissueTag(db, { collectorId: pending.id, newTagId: 'TAG-NOPE' }),
+        reissueTag(db, { collectorId: revoked.id, newTagId: 'TAG-REVOKED' }),
       ).rejects.toThrow(CollectorNotAuthorizedError);
-      expect(await findActiveTagMapping(db, 'TAG-NOPE')).toBeNull();
+      expect(await findActiveTagMapping(db, 'TAG-REVOKED')).toBeNull();
     });
 
     it('findActiveTagMapping returns null for an unknown tag', async () => {

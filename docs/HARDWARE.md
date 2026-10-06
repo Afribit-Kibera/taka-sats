@@ -2,7 +2,7 @@
 
 ## Current identity-only card workflow
 
-On Android Chrome, open `/cards`, choose an authorized recipient and place a blank writable NFC card
+On Android Chrome, open `/cards`, choose a registered recipient and place a blank writable NFC card
 against the phone. The app writes `takasats:<publicCode>` plus the canonical HTTPS `/c/<code>` URL,
 reads back both records and links the chip serial server-side. It refuses overwrite of nonblank cards.
 If linking fails after writing, use the link-written-card recovery action; do not rewrite the card.
@@ -25,28 +25,29 @@ carry zero fund-recovery risk if lost.
 
 ## Chip
 
-**NTAG213 or NTAG216** (NFC Forum Type 2). Both are read/write, support a static URI
-record, and are what encodes the LNURL-pay link / Lightning Address written at enrolment
-(ADR-0001 - receive-only, no rolling code, no NTAG424/Bolt Card primitive).
+**NTAG213 or NTAG216** (NFC Forum Type 2). Both are read/write and support NDEF identity records.
+The current card contains the public collector reference and canonical HTTPS URL, not a Lightning
+Address or LNURL-pay link (ADR-0017). There is no rolling code or Bolt Card spending primitive.
 
 | | NTAG213 | NTAG216 |
 |---|---|---|
 | User memory | 144 bytes | 888 bytes |
 | Typical unit cost | ~$0.20-0.60 | ~$0.40-1.00 |
-| Fits our payload? | Yes - an LNURL-pay bech32 string or a short Lightning Address comfortably fits in 144 bytes as a single NDEF URI record | Yes, with headroom |
+| Fits our payload? | Check the actual two-record identity payload and NDEF overhead before a batch; 144 bytes are available | 888 bytes provide more headroom |
 
 **Default: NTAG213.** It is cheaper, bulk-provisions faster, and the payload is short.
-Move to NTAG216 only if a future payload (e.g. a longer provisioned LNURLp URL) doesn't fit.
+Move to NTAG216 if the actual identity records do not fit. Test one card before a batch.
 
 ## Writing cards
 
 Cards are written from an Android phone with Chrome and NFC switched on, using the **Write a collector
-card** page (`/cards` on your deployment, signed in as staff). Search for an approved collector, press
+card** page (`/cards` on your deployment, signed in as staff). Search for a registered collector, press
 **Write card**, and hold a blank card to the back of the phone. The page writes two records, the
 `takasats:<code>` reference and the `<base>/c/<code>` link, then reads the chip serial and links it to
 the collector so a tap on the weigh screen finds them. **Check a card** reads one back and shows what it
 says and who it is linked to. A card carries an identity pointer only: it cannot hold or spend money.
-A collector must be approved before a card can be linked. Web NFC works only on Android Chrome over
+A pending collector can receive a card, but still needs authorization before weighing or payment.
+Revoked collectors cannot receive new cards. Web NFC works only on Android Chrome over
 https, so a desktop computer cannot write cards.
 
 ## Form factor

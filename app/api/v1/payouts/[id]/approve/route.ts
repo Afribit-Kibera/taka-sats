@@ -22,9 +22,9 @@ const paramsSchema = z.object({ id: z.uuid() });
 
 type RouteParams = { readonly params: Promise<{ id: string }> };
 
-export async function POST(_request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('payout:approve');
+    const actor = await requireScope('payout:approve', request);
     const { id } = paramsSchema.parse(await params);
 
     const db = getDb();

@@ -9,7 +9,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { errorResponse } from '@/lib/api/errors';
-import { getActor, requireScope, UnauthorizedError } from '@/lib/auth/session';
+import {
+  actorHasScope,
+  ForbiddenError,
+  getActor,
+  requireScope,
+  UnauthorizedError,
+} from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
 import { createSession, createSessionInputSchema, listSessions } from '@/lib/sessions';
 
@@ -19,9 +25,17 @@ const listQuerySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await getActor();
+    const actor = await getActor(request);
     if (!actor) {
       throw new UnauthorizedError();
+    }
+    if (
+      !actorHasScope(
+        actor,
+        actor.kind === 'partner' ? 'session:metrics:read:sponsored' : 'session:read',
+      )
+    ) {
+      throw new ForbiddenError('session:read');
     }
     const { status } = listQuerySchema.parse({
       status: request.nextUrl.searchParams.get('status') ?? undefined,
@@ -48,7 +62,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('session:configure');
+    await requireScope('session:configure', request);
     const input = createSessionInputSchema.parse(await request.json().catch(() => ({})));
     const session = await createSession(getDb(), input);
     return NextResponse.json({ session }, { status: 201 });

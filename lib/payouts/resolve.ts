@@ -22,7 +22,7 @@
  */
 
 import { and, eq, isNull, ne, sql } from 'drizzle-orm';
-import { type Role, roleHasScope } from '@/lib/auth/permissions';
+import { actorHasScope, type ScopedActor } from '@/lib/auth/permissions';
 import { getSettings } from '@/lib/config';
 import type { Database } from '@/lib/db/client';
 import { anomalyFlags, collectionEvents, payoutResolutions, payouts } from '@/lib/db/schema';
@@ -40,7 +40,7 @@ export type PayoutCheck =
 
 export type ResolvePayoutInput = {
   readonly payoutId: string;
-  readonly actor: { readonly id: string; readonly role: Role };
+  readonly actor: ScopedActor & { readonly id: string };
   readonly outcome: 'paid' | 'failed';
   /** Provider payment hash or transaction id. Required for `paid` unless the payout already holds one. */
   readonly reference?: string | undefined;
@@ -92,9 +92,9 @@ async function lookup(
 export async function checkPayout(
   db: Database,
   provider: Lookup | null,
-  input: { readonly payoutId: string; readonly actor: { readonly role: Role } },
+  input: { readonly payoutId: string; readonly actor: ScopedActor },
 ): Promise<PayoutCheck & { readonly payout: PayoutRecord }> {
-  if (!roleHasScope(input.actor.role, 'payout:resolve')) {
+  if (!actorHasScope(input.actor, 'payout:resolve')) {
     throw new PayoutResolveError('not_permitted', 'This role cannot check or resolve payouts');
   }
   const payout = await requirePayout(db, input.payoutId);
@@ -129,7 +129,7 @@ export async function resolvePayout(
   now: Date = new Date(),
 ): Promise<ResolvePayoutResult> {
   const { actor, outcome } = input;
-  if (!roleHasScope(actor.role, 'payout:resolve')) {
+  if (!actorHasScope(actor, 'payout:resolve')) {
     throw new PayoutResolveError('not_permitted', 'This role cannot resolve payouts');
   }
   const payout = await requirePayout(db, input.payoutId);

@@ -86,6 +86,39 @@ export const collectors = pgTable(
 /** Source of the numeric part of every `public_code` (the prefix/site come from config). */
 export const collectorPublicCodeSeq = pgSequence('collector_public_code_seq', { startWith: 1 });
 
+/** Scoped bearer credentials; only a random token's SHA-256 hash is stored. */
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => supervisors.id),
+    name: text('name').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    tokenPrefix: text('token_prefix').notNull(),
+    scopes: jsonb('scopes').$type<readonly string[]>().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    revokedBy: uuid('revoked_by').references(() => supervisors.id),
+  },
+  (table) => [
+    index('api_keys_owner_idx').on(table.ownerId),
+    index('api_keys_created_idx').on(table.createdAt, table.id),
+    check('api_keys_expiry_check', sql`${table.expiresAt} > ${table.createdAt}`),
+    check('api_keys_hash_check', sql`${table.tokenHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      'api_keys_scopes_check',
+      sql`jsonb_typeof(${table.scopes}) = 'array' and jsonb_array_length(${table.scopes}) > 0`,
+    ),
+    check(
+      'api_keys_revocation_check',
+      sql`(${table.revokedAt} is null) = (${table.revokedBy} is null)`,
+    ),
+  ],
+);
+
 /**
  * The physical-tag lifecycle for a collector (§7.2–7.3). Reissue = a new row
  * mapping a new tag to the same `collector_id`; the collector's earnings

@@ -38,6 +38,8 @@ code_prefix            = "TS"            # first segment of a collector's public
 default_site_code      = ""              # site segment when an enrolment names none ("" = omit it)
 
 [auth]
+# Scoped dashboard keys must explicitly expire within this period (1..365 days).
+api_key_max_age_days = 90
 # How long a signed-in supervisor session survives, including fully offline
 # (§3.1, ADR-0002) — a JWT session, not a server-side lookup, so this is the
 # only place the duration is decided. Balance re-auth friction in the field

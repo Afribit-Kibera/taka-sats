@@ -9,7 +9,7 @@ test('hot wallet is operational only; legacy funding mutations are removed', asy
   const operator = await personContext(browser, ADMINS[0], '/admin');
   await operator.page.goto('/hot-wallet');
   await expect(
-    operator.page.getByRole('heading', { name: 'Hot wallet', exact: true }),
+    operator.page.getByRole('heading', { name: 'Hot wallet status', exact: true }),
   ).toBeVisible();
   await expect(operator.page.getByTestId('propose-submit')).toHaveCount(0);
   const refused = await operator.page.evaluate(async () => {

@@ -126,6 +126,19 @@ export function roleHasScope(role: Role, scope: Scope): boolean {
   return ROLE_SCOPE_SETS[role].has(scope);
 }
 
+/** Actor-level grants preserve least privilege inside domain functions as well as routes. */
+export type ScopedActor = {
+  readonly role: Role;
+  readonly apiKeyId?: string;
+  readonly scopes?: readonly Scope[];
+};
+
+export function actorHasScope(actor: ScopedActor, scope: Scope): boolean {
+  return (
+    roleHasScope(actor.role, scope) && (!actor.apiKeyId || Boolean(actor.scopes?.includes(scope)))
+  );
+}
+
 /** True when the scope is a system-only function no human role can hold. */
 export function isSystemOnlyScope(scope: Scope): scope is SystemOnlyScope {
   return (SYSTEM_ONLY_SCOPES as readonly Scope[]).includes(scope);

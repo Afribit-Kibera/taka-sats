@@ -15,7 +15,7 @@ import { reconciliationPeriodSchema, runReconciliation, toReportView } from '@/l
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await requireScope('reconciliation:write');
+    const actor = await requireScope('reconciliation:write', request);
     const period = reconciliationPeriodSchema.parse(await request.json().catch(() => null));
     const reports = await runReconciliation(getDb(), period, actor.id);
     return NextResponse.json({ reports: reports.map(toReportView) }, { status: 201 });

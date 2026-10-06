@@ -63,15 +63,25 @@ describe.skipIf(!hasDatabase)('POST /api/v1/collectors/:id/tags — integration'
     expect(body.tag.tagId).toBe('TAG-001');
   });
 
-  it('409 collector_not_authorized when the collector is still pending (D-25)', async () => {
+  it('links an identity card during registration while the collector stays pending', async () => {
     const collector = await createCollector(db, { status: 'pending' });
-    const response = await POST(postRequest(collector.id, { newTagId: 'TAG-NOPE' }), {
+    const response = await POST(postRequest(collector.id, { newTagId: 'TAG-PENDING' }), {
+      params: Promise.resolve({ id: collector.id }),
+    });
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.tag.tagId).toBe('TAG-PENDING');
+  });
+
+  it('409 collector_not_authorized when the collector is revoked', async () => {
+    const collector = await createCollector(db, { status: 'revoked' });
+    const response = await POST(postRequest(collector.id, { newTagId: 'TAG-REVOKED' }), {
       params: Promise.resolve({ id: collector.id }),
     });
     expect(response.status).toBe(409);
     const body = await response.json();
     expect(body.error.code).toBe('collector_not_authorized');
-    expect(body.error.details).toEqual({ status: 'pending' });
+    expect(body.error.details).toEqual({ status: 'revoked' });
   });
 
   it('404s for an unknown collector', async () => {

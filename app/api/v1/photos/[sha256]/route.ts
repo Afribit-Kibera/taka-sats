@@ -20,9 +20,9 @@ const paramsSchema = z.object({ sha256: z.string().regex(/^[0-9a-f]{64}$/) });
 
 type RouteParams = { readonly params: Promise<{ sha256: string }> };
 
-export async function GET(_request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    await requireScope('collector:read');
+    await requireScope('collector:read', request);
 
     const { sha256 } = paramsSchema.parse(await params);
     const photo = await getPhoto(sha256);

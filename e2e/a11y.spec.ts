@@ -38,7 +38,7 @@ test.describe('operator console', () => {
 });
 
 test.describe('supervisor pages', () => {
-  for (const route of ['/enrol', '/lookup', '/session', '/weigh']) {
+  for (const route of ['/enrol', '/lookup', '/session', '/weigh', '/cards']) {
     test(`axe: ${route}`, async ({ page }) => {
       await login(page, FIELD_SUPERVISOR, '/enrol');
       await audit(page, route);

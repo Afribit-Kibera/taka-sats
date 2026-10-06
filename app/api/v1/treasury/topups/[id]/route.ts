@@ -16,9 +16,9 @@ const paramsSchema = z.object({ id: z.uuid() });
 
 type RouteParams = { readonly params: Promise<{ id: string }> };
 
-export async function GET(_request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    await requireScope('treasury:read');
+    await requireScope('treasury:read', request);
     const { id } = paramsSchema.parse(await params);
     const topup = await getTopupView(getDb(), id);
     if (!topup) {

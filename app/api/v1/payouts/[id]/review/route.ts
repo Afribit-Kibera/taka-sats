@@ -19,7 +19,7 @@ export async function POST(
   },
 ): Promise<NextResponse> {
   try {
-    const actor = await requireScope('payout:approve');
+    const actor = await requireScope('payout:approve', request);
     const { id } = paramsSchema.parse(await params);
     const body = payoutReviewSchema.parse(await request.json());
     const db = getDb();

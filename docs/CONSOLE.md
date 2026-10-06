@@ -1,5 +1,10 @@
 # The operator console
 
+The bundled console is an optional reference client, not a required administrator workspace.
+The supervisor field app is the product UI; programme operators can use their existing dashboards
+through the API. See [API integration](API_INTEGRATION.md). Existing console routes remain in the
+codebase; no role or permission is removed merely by choosing not to use them.
+
 The admin console (`app/(admin)`) is how staff run a programme day without touching `curl`: vetting
 collectors, reviewing payout exceptions, monitoring the operating hot wallet and verifying the
 ledger. It is deliberately plain: it composes the shared UI primitives in the existing token

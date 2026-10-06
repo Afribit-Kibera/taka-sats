@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { ForbiddenError, UnauthorizedError } from '@/lib/auth/session';
+import { ApiKeyInputError, ApiKeyNotFoundError } from '@/lib/auth/api-keys';
 import {
   CollectorNotAuthorizedError,
   CollectorNotFoundError,
@@ -85,6 +86,12 @@ function json(
  * payload (Code Style Guide §9.6: no full domain object in a log line).
  */
 export function errorResponse(error: unknown): NextResponse<ApiErrorBody> {
+  if (error instanceof ApiKeyInputError) {
+    return json(400, 'invalid_request', error.message);
+  }
+  if (error instanceof ApiKeyNotFoundError) {
+    return json(404, 'not_found', error.message);
+  }
   if (error instanceof UnauthorizedError) {
     return json(401, 'unauthorized', error.message);
   }

@@ -12,9 +12,9 @@ import { requireScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
 import { payoutSummary } from '@/lib/payouts';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request?: Request): Promise<NextResponse> {
   try {
-    const actor = await requireScope('payout:read');
+    const actor = await requireScope('payout:read', request);
     const summary = await payoutSummary(
       getDb(),
       actor.role === 'supervisor' ? actor.id : undefined,

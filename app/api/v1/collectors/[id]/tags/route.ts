@@ -19,7 +19,7 @@ type RouteParams = { readonly params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    await requireScope('collector:enrol');
+    await requireScope('collector:enrol', request);
 
     const { id } = paramsSchema.parse(await params);
     const body: unknown = await request.json().catch(() => ({}));

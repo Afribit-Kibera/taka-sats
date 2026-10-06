@@ -30,7 +30,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:read');
+    const actor = await requireScope('collector:read', request);
     const { cursor, limit, ...filter } = querySchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );

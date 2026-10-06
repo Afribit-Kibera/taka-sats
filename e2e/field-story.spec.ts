@@ -102,10 +102,10 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
     const page = sup.page;
     await page.goto('/weigh');
     await page.getByRole('button', { name: /Record a collection/ }).click();
-    await expect(page.getByRole('textbox', { name: 'Search name or code' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
     await sup.context.setOffline(true);
 
-    await page.getByRole('textbox', { name: 'Search name or code' }).fill('Story');
+    await page.getByRole('textbox', { name: 'Name, group or public code' }).fill('Story');
     await page.getByRole('button', { name: new RegExp(ALIAS) }).click();
     await page.getByRole('button', { name: 'Use selected collector' }).click();
     await page.getByRole('button', { name: /PET/ }).click();

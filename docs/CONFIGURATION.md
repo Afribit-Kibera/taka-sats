@@ -86,6 +86,10 @@ settings file only seeds the initial rate table on the first migration.
 
 ## Adding a new tunable
 
+Dashboard keys must expire within `auth.api_key_max_age_days` (default 90; allowed 1-365 days).
+Compose passes `TAKASATS__AUTH__API_KEY_MAX_AGE_DAYS` to the backend. This limits new issuance, not
+extension of existing keys. Session lifetime is separate. See [API integration](API_INTEGRATION.md).
+
 In the same change: add the key to `config/settings.default.toml` (with a comment), add it
 to the Zod schema in `lib/config/schema.ts`, and add a row to the table above. An
 operational literal in domain code fails review.

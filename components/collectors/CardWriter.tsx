@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { isWebNfcAvailable, readCard, writeCollectorCard } from '@/lib/nfc';
 
 type Found = { id: string; alias: string; publicCode: string; status: string };
-type Detail = Found & { reference: { payload: string; url: string } };
+type Detail = Found & { nfcTagId: string | null; reference: { payload: string; url: string } };
 
 type Step =
   | { kind: 'pick' }
@@ -29,7 +29,7 @@ type Step =
 /**
  * Write and check collector NFC cards from an Android phone (Web NFC, Chrome). The card carries
  * the collector's public reference only (D-24); the chip serial is then linked to the collector so
- * a tap finds them. Needs a collector that is already approved.
+ * a tap finds them. Pending collectors can be tagged; tagging never authorizes payment.
  */
 export function CardWriter() {
   const t = useTranslations('Cards');
@@ -55,12 +55,20 @@ export function CardWriter() {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/v1/collectors?q=${encodeURIComponent(q)}`, {
-          signal: controller.signal,
-        });
-        if (res.ok) {
-          const body = (await res.json()) as { collectors: Found[] };
-          setResults(body.collectors);
+        // A supervisor may search active identities and their own pending registrations.
+        // Do not request the administrator-only all-status queue.
+        const responses = await Promise.all(
+          ['active', 'pending'].map((status) =>
+            fetch(`/api/v1/collectors?status=${status}&q=${encodeURIComponent(q)}`, {
+              signal: controller.signal,
+            }),
+          ),
+        );
+        if (responses.every((response) => response.ok)) {
+          const bodies = (await Promise.all(responses.map((response) => response.json()))) as {
+            collectors: Found[];
+          }[];
+          setResults(bodies.flatMap((body) => body.collectors));
         } else setMessage(t('loadFailed'));
       } catch {
         if (!controller.signal.aborted) setMessage(t('loadFailed'));
@@ -93,7 +101,7 @@ export function CardWriter() {
   );
 
   const write = useCallback(async () => {
-    if (!chosen) {
+    if (!chosen || chosen.status === 'revoked') {
       return;
     }
     abort.current?.abort();
@@ -138,9 +146,20 @@ export function CardWriter() {
       const card = await readCard(controller.signal);
       const payload = card.texts.find((text) => text.startsWith('takasats:')) ?? null;
       const res = await fetch(`/api/v1/tags/${encodeURIComponent(card.serial)}`);
-      const body = res.ok
+      let body = res.ok
         ? ((await res.json()) as { collector: { alias: string; publicCode: string } })
         : null;
+      // Pending tags deliberately cannot resolve through the weighing lookup.
+      // Check the selected identity's stored mapping without changing eligibility.
+      if (!body && res.status === 409 && chosen && payload === chosen.reference.payload) {
+        const detailResponse = await fetch(`/api/v1/collectors/${chosen.id}`);
+        if (detailResponse.ok) {
+          const detail = (await detailResponse.json()) as { collector: Detail };
+          if (detail.collector.status !== 'revoked' && detail.collector.nfcTagId === card.serial) {
+            body = { collector: detail.collector };
+          }
+        }
+      }
       setStep({
         kind: 'read',
         serial: card.serial,
@@ -152,10 +171,10 @@ export function CardWriter() {
       setStep({ kind: 'pick' });
       if (!controller.signal.aborted) setMessage(t('readFailed'));
     }
-  }, [t]);
+  }, [chosen, t]);
 
   const linkWritten = useCallback(async () => {
-    if (!chosen || chosen.status !== 'active') return;
+    if (!chosen || chosen.status === 'revoked') return;
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
@@ -249,7 +268,12 @@ export function CardWriter() {
               <p className="font-mono text-xs text-muted-foreground">{chosen.reference.payload}</p>
             </div>
           </div>
-          {chosen.status !== 'active' ? (
+          {chosen.status === 'pending' ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              {t('pendingIdentity')}
+            </p>
+          ) : null}
+          {chosen.status === 'revoked' ? (
             <p role="alert" className="text-sm">
               {t('notApproved')}
             </p>
@@ -270,7 +294,7 @@ export function CardWriter() {
               <span className="font-mono text-xs">{step.serial}</span>
             </p>
           ) : null}
-          {supported && chosen.status === 'active' ? (
+          {supported && chosen.status !== 'revoked' ? (
             <Button
               type="button"
               variant="outline"

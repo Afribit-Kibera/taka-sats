@@ -21,7 +21,7 @@ type RouteParams = { readonly params: Promise<{ id: string }> };
 
 export async function PATCH(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('session:configure');
+    const actor = await requireScope('session:configure', request);
     const { id } = paramsSchema.parse(await params);
     const { active } = bodySchema.parse(await request.json().catch(() => null));
     const result = await setSupervisorActive(getDb(), { id, active, actorId: actor.id });

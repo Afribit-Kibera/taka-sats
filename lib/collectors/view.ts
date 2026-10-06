@@ -7,7 +7,7 @@
  * (`docs/BACKEND.md`). Dates are ISO strings on the wire.
  */
 
-import { roleHasScope } from '@/lib/auth/permissions';
+import { actorHasScope } from '@/lib/auth/permissions';
 import { getSettings } from '@/lib/config';
 import { collectorRefUrl, formatCollectorRef } from './reference';
 import type { CollectorActor, CollectorRecord, DestinationRecord } from './types';
@@ -53,7 +53,7 @@ export function canSeeAddress(
   actor: CollectorActor,
   collector: Pick<CollectorRecord, 'registeredBy'>,
 ): boolean {
-  return roleHasScope(actor.role, 'collector:authorize') || collector.registeredBy === actor.id;
+  return actorHasScope(actor, 'collector:authorize') || collector.registeredBy === actor.id;
 }
 
 export function toCollectorView(

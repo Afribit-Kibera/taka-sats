@@ -40,7 +40,7 @@ export async function expectNoErrorNotice(page: Page): Promise<void> {
 
 /** Record one 2.5 kg PET collection through the five-screen flow (works with the network off). */
 export async function recordCollection(page: Page, search: string, alias: RegExp): Promise<void> {
-  await page.getByRole('textbox', { name: 'Search name or code' }).fill(search);
+  await page.getByRole('textbox', { name: 'Name, group or public code' }).fill(search);
   await page.getByRole('button', { name: alias }).click();
   await page.getByRole('button', { name: 'Use selected collector' }).click();
   await page.getByRole('button', { name: /PET/ }).click();

@@ -21,9 +21,9 @@ const paramsSchema = z.object({ id: z.uuid() });
 
 type RouteParams = { readonly params: Promise<{ id: string }> };
 
-export async function GET(_request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('payout:resolve');
+    const actor = await requireScope('payout:resolve', request);
     const { id } = paramsSchema.parse(await params);
     const result = await checkPayout(getDb(), getLightningProvider(), {
       payoutId: id,

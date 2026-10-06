@@ -30,7 +30,7 @@ type RouteParams = { readonly params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:authorize');
+    const actor = await requireScope('collector:authorize', request);
 
     const { id } = paramsSchema.parse(await params);
     const { decision, reason } = bodySchema.parse(await request.json().catch(() => ({})));

@@ -21,7 +21,7 @@ import { computeReconciliation, reconciliationPeriodSchema, toRowView } from '@/
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('reconciliation:read');
+    await requireScope('reconciliation:read', request);
     const period = reconciliationPeriodSchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );

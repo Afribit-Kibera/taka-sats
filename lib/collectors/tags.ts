@@ -26,8 +26,9 @@ import {
 /**
  * Map a new physical tag to `collectorId`. Closes every currently-active
  * mapping for that collector first — the earnings history (collection_events,
- * ledger entries) is untouched, only the tag pointer moves. Only an authorized
- * (`active`) collector can be issued a tag (D-25).
+ * ledger entries) is untouched, only the tag pointer moves. Pending collectors
+ * can receive identity cards at registration; tagging never authorizes them.
+ * Revoked identities remain blocked.
  */
 export async function reissueTag(db: Database, input: ReissueTagInput): Promise<TagHistoryRecord> {
   const parsed = reissueTagInputSchema.parse(input);
@@ -42,8 +43,8 @@ export async function reissueTag(db: Database, input: ReissueTagInput): Promise<
     if (!collector) {
       throw new CollectorNotFoundError(parsed.collectorId);
     }
-    // NFC tags are issued only to authorized collectors (D-25).
-    if (collector.status !== 'active') {
+    // Identity issuance is separate from eligibility to record work or pay.
+    if (collector.status === 'revoked') {
       throw new CollectorNotAuthorizedError(collector.id, collector.status);
     }
 

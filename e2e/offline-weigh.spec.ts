@@ -26,13 +26,13 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
   // ── prime the weigh cache (online) ────────────────────────────────────────
   await page.goto('/weigh');
   await page.getByRole('button', { name: /Record a collection/ }).click();
-  await expect(page.getByRole('textbox', { name: 'Search name or code' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
 
   // ── network off ──────────────────────────────────────────────────────────
   await context.setOffline(true);
 
   // collector — from the cached list, no network
-  await page.getByRole('textbox', { name: 'Search name or code' }).fill('Amina');
+  await page.getByRole('textbox', { name: 'Name, group or public code' }).fill('Amina');
   await page.getByRole('button', { name: /Amina E2E/ }).click();
   await page.getByRole('button', { name: 'Use selected collector' }).click();
 

@@ -15,7 +15,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { errorResponse } from '@/lib/api/errors';
-import { roleHasScope } from '@/lib/auth/permissions';
+import { actorHasScope } from '@/lib/auth/permissions';
 import { ForbiddenError, requireScope } from '@/lib/auth/session';
 import {
   enrolCollector,
@@ -37,7 +37,7 @@ const searchSchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:read');
+    const actor = await requireScope('collector:read', request);
 
     const params = request.nextUrl.searchParams;
     const { q, status, limit } = searchSchema.parse({
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       ]);
     }
 
-    const isStaff = roleHasScope(actor.role, 'collector:authorize');
+    const isStaff = actorHasScope(actor, 'collector:authorize');
     if (!isStaff && status !== 'active' && status !== 'pending') {
       throw new ForbiddenError('collector:authorize');
     }
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:enrol');
+    const actor = await requireScope('collector:enrol', request);
 
     const db = getDb();
     // M2-7: a plain `supervisor` may only enrol while they have an active

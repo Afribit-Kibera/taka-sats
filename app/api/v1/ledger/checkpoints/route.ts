@@ -24,7 +24,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('ledger:read');
+    await requireScope('ledger:read', request);
     const params = request.nextUrl.searchParams;
     const { cursor, limit } = querySchema.parse({
       cursor: params.get('cursor') ?? undefined,

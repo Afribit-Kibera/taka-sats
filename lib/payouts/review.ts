@@ -2,7 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { roleHasScope, type Role } from '@/lib/auth/permissions';
+import { actorHasScope, type ScopedActor } from '@/lib/auth/permissions';
 import type { Database } from '@/lib/db/client';
 import { collectionEvents, payouts } from '@/lib/db/schema';
 import { appendEntryTx, payloadHash } from '@/lib/ledger';
@@ -22,12 +22,11 @@ export async function reviewPayout(
   db: Database,
   input: PayoutReviewInput & {
     readonly payoutId: string;
-    readonly actor: { readonly id: string; readonly role: Role };
+    readonly actor: ScopedActor & { readonly id: string };
   },
   now = new Date(),
 ): Promise<{ readonly payout: PayoutRecord; readonly changed: boolean }> {
-  if (!roleHasScope(input.actor.role, 'payout:approve'))
-    throw new PayoutApprovalError('not_permitted');
+  if (!actorHasScope(input.actor, 'payout:approve')) throw new PayoutApprovalError('not_permitted');
   const { decision, reason } = payoutReviewSchema.parse({
     decision: input.decision,
     reason: input.reason,

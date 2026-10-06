@@ -16,12 +16,9 @@ import { deleteRotation } from '@/lib/rotations';
 const paramsSchema = z.object({ id: z.uuid() });
 type RouteParams = { readonly params: Promise<{ id: string }> };
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: RouteParams,
-): Promise<NextResponse> {
+export async function DELETE(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    await requireScope('session:configure');
+    await requireScope('session:configure', request);
     const { id } = paramsSchema.parse(await params);
 
     const deleted = await deleteRotation(getDb(), id);

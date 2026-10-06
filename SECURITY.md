@@ -2,6 +2,14 @@
 
 ## Field-first changes (2026-10-06)
 
+- Dashboard bearer keys contain256 random bits, mandatory bounded expiry, hash-only storage and
+  immediate revocation. Effective grants intersect scopes and the active owner's current role each
+  request, including domain-level authorization/wallet replacement. Stable actor id preserves
+  self-approval restrictions; invalid bearer cannot fall back to cookies.
+- Only administrator sessions create/list/revoke keys. A key cannot mint keys or log into browser
+  pages. Creation alone returns the secret, with no-store headers. Never put keys in public browser
+  JavaScript. Cross-origin browser/SSO support and general API rate-limit tuning remain open; keys
+  do not solve bootstrap-account or off-host-backup gaps.
 - Payment execution remains worker-only; destination and amount are resolved server-side. Strict review
   bodies accept only decision/reason. The recorder cannot approve their own work, and snapshot-bound
   approval is invalidated by changed evidence, destination or flags. No human gains `payout:execute`.
@@ -16,6 +24,8 @@
   preserve 401/403 and return 410 to authorized staff. Historical records/keys are not deleted or exposed.
 - Blank NFC writes refuse overwrite and require exact identity read-back before linking. A card is
   clonable public identity, not login/payment authorization or a wallet. Server gates remain authoritative.
+  Supervisors may attach identity cards while a collector is pending; the status, authorization history,
+  offline-cache exclusion and payment gate are unchanged. Revoked collectors cannot receive new cards.
 
 Taka Sats moves real money for people with little margin for error. Security reports are
 welcome and taken seriously.

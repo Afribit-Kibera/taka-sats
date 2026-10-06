@@ -15,7 +15,7 @@
  */
 
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { roleHasScope } from '@/lib/auth/permissions';
+import { actorHasScope } from '@/lib/auth/permissions';
 import { getSettings } from '@/lib/config';
 import type { Database, Queryable } from '@/lib/db/client';
 import { isUniqueViolation } from '@/lib/db/pg-errors';
@@ -213,7 +213,7 @@ export async function attachDestination(
 ): Promise<AttachDestinationResult> {
   const parsed = attachDestinationInputSchema.parse(input);
   const { type, address } = normalizeDestination(parsed.rawCode);
-  const canReplace = roleHasScope(actor.role, 'collector:authorize');
+  const canReplace = actorHasScope(actor, 'collector:authorize');
 
   // Cheap checks first — before any network call.
   const [collector] = await db

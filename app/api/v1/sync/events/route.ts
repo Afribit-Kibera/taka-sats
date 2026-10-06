@@ -26,7 +26,7 @@ import { enqueueProcessPayout } from '@/lib/jobs';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collection:record');
+    const actor = await requireScope('collection:record', request);
     const { events } = syncEventsBodySchema.parse(await request.json().catch(() => ({})));
     const db = getDb();
 

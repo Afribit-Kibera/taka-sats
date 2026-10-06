@@ -21,7 +21,7 @@ const querySchema = z.object({ mode: z.enum(['full', 'windowed']).default('full'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('ledger:read');
+    await requireScope('ledger:read', request);
     const { mode } = querySchema.parse({
       mode: request.nextUrl.searchParams.get('mode') ?? undefined,
     });

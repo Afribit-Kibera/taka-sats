@@ -13,9 +13,9 @@ import { requireScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
 import { createRotation, createRotationInputSchema, listRotations } from '@/lib/rotations';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request?: Request): Promise<NextResponse> {
   try {
-    await requireScope('session:configure');
+    await requireScope('session:configure', request);
     return NextResponse.json({ rotations: await listRotations(getDb()) });
   } catch (error) {
     return errorResponse(error);
@@ -24,7 +24,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('session:configure');
+    await requireScope('session:configure', request);
     const input = createRotationInputSchema.parse(await request.json().catch(() => ({})));
     const rotation = await createRotation(getDb(), input);
     return NextResponse.json({ rotation }, { status: 201 });

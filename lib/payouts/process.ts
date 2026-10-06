@@ -23,7 +23,7 @@
  */
 
 import { and, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
-import { roleHasScope, type Role } from '@/lib/auth/permissions';
+import { actorHasScope, type ScopedActor } from '@/lib/auth/permissions';
 import { getLiveDestination } from '@/lib/collectors';
 import { getSettings } from '@/lib/config';
 import type { Database, Queryable } from '@/lib/db/client';
@@ -582,7 +582,7 @@ export async function approvePayout(
   db: Database,
   input: {
     readonly payoutId: string;
-    readonly actor: { readonly id: string; readonly role: Role };
+    readonly actor: ScopedActor & { readonly id: string };
   },
 ): Promise<{ readonly payout: PayoutRecord; readonly changed: boolean }> {
   if (getSettings().payouts.approval_mode === 'risk_based') {
@@ -590,7 +590,7 @@ export async function approvePayout(
     return reviewPayout(db, { ...input, decision: 'approved', reason: 'legacy_api_approval' });
   }
   const { payoutId, actor } = input;
-  if (!roleHasScope(actor.role, 'payout:approve')) {
+  if (!actorHasScope(actor, 'payout:approve')) {
     throw new PayoutApprovalError('not_permitted');
   }
   const payout = await requirePayout(db, payoutId);

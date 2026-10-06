@@ -23,7 +23,7 @@ const sha256Schema = z.string().regex(/^[0-9a-f]{64}$/, 'expected a 64-char hex 
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('collection:record');
+    await requireScope('collection:record', request);
 
     const claimed = sha256Schema.parse(request.headers.get('x-photo-sha256') ?? '');
     const contentType = request.headers.get('content-type') ?? 'application/octet-stream';
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const bytes = new Uint8Array(await request.arrayBuffer());
     if (bytes.byteLength === 0) {
       return NextResponse.json(
-        { error: { code: 'invalid_request', message: 'Empty body' } },
+        { error: { code: 'invalidrequest', message: 'Empty body' } },
         { status: 400 },
       );
     }

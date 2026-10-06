@@ -23,9 +23,9 @@ import { latestSnapshot } from '@/lib/money/rates';
 import { currentRates } from '@/lib/rates';
 import { currentSessionForSupervisor, NoActiveSessionError } from '@/lib/sessions';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request?: Request): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collection:record');
+    const actor = await requireScope('collection:record', request);
     const db = getDb();
 
     const session = await currentSessionForSupervisor(db, actor.id);

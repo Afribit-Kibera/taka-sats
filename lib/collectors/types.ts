@@ -2,7 +2,7 @@
 
 import type { InferSelectModel } from 'drizzle-orm';
 import { z } from 'zod';
-import type { Role } from '@/lib/auth/permissions';
+import type { ScopedActor } from '@/lib/auth/permissions';
 import type {
   collectorAuthorizations,
   collectorPaymentDestinations,
@@ -16,7 +16,7 @@ export type CollectorAuthorizationRecord = InferSelectModel<typeof collectorAuth
 export type DestinationRecord = InferSelectModel<typeof collectorPaymentDestinations>;
 
 /** The staff member performing a collector operation (resolved by the route from the session). */
-export type CollectorActor = { readonly id: string; readonly role: Role };
+export type CollectorActor = ScopedActor & { readonly id: string };
 
 export const COLLECTOR_STATUSES = ['pending', 'active', 'revoked'] as const;
 export type CollectorStatus = (typeof COLLECTOR_STATUSES)[number];

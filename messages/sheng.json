@@ -195,7 +195,7 @@
     "doneTitle": "{alias} is enrolled.",
     "enrolAnother": "Enrol another",
     "pendingTitle": "{alias} is registered. Waiting for authorization.",
-    "pendingBody": "They cannot be weighed or paid until a hub lead authorizes them. Give the hub lead this code.",
+    "pendingBody": "They cannot be weighed or paid until an authorized operator approves them. Their identity card can be issued now.",
     "finishPending": "Done. Wait for authorization",
     "noWalletYet": "No wallet is attached yet. You can add one later while they are waiting for authorization.",
     "walletChecking": "The wallet host could not be reached, so the wallet will be checked again shortly.",
@@ -230,7 +230,7 @@
     "collectiveHint": "One group, one registered wallet. The group decides how to share its earnings.",
     "onlineRegistration": "Registration needs a connection. Once approved and synced, recipients can be found offline.",
     "finishRegistration": "Finish registration",
-    "cardLater": "No card is needed to collect. After authorization, you can write and print an optional identity card.",
+    "cardLater": "You can issue an optional identity card now. The card does not authorize weighing or payment.",
     "cardsLink": "Write or print a card",
     "walletPlaceholder": "name@wallet.example or LNURL-pay"
   },
@@ -1269,7 +1269,7 @@
     "intro": "Use an Android phone with Chrome and NFC switched on. Use a blank NTAG card. The card only carries the collector's code. It cannot hold or spend money.",
     "searchLabel": "Find the collector (name or code)",
     "searchPlaceholder": "Start typing a name or code",
-    "notApproved": "This collector is not approved yet. A hub lead or admin must approve them first.",
+    "notApproved": "This identity has been revoked. It cannot receive a new card.",
     "writeButton": "Write card",
     "writing": "Hold a blank card to the back of the phone",
     "saved": "Card ready. It carries {code}. Card serial:",
@@ -1285,7 +1285,7 @@
     "linkFailed": "The card is written but not linked yet. Use “Link a written card” with this same recipient before handing it out.",
     "cardTaken": "That card is already linked to someone else. Use a different card.",
     "unavailable": "NFC needs Chrome on an Android phone with NFC enabled. You can still find a recipient and print their QR here.",
-    "stepPick": "Find an approved individual or collective.",
+    "stepPick": "Find the registered individual or collective.",
     "stepWrite": "On Android Chrome, write a blank NFC card. Hold it again to verify the saved identity.",
     "stepPrint": "Print the identity and QR at actual size, then check both NFC and QR before handing over the card.",
     "identityOnly": "Identity only",
@@ -1297,6 +1297,7 @@
     "readMismatch": "Identity is unlinked or does not match. Do not hand this card out yet.",
     "linkWritten": "Link a written card",
     "linkConfirm": "Link this identity card to the selected recipient",
-    "linkMismatch": "That card carries another identity. Choose the matching recipient or use a new blank card."
+    "linkMismatch": "That card carries another identity. Choose the matching recipient or use a new blank card.",
+    "pendingIdentity": "You can issue this identity card now. The collector still needs authorization before weighing or payment."
   }
 }

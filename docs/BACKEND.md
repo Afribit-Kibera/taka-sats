@@ -1,7 +1,9 @@
 # Backend contract - what the frontend builds against
 
-**Audience:** anyone building or changing UI for Taka Sats (the supervisor PWA, the admin
-console, public pages). **Source of truth:** the code; this file is its map. If they disagree the
+**Audience:** anyone integrating Taka Sats APIs, the supervisor PWA or public pages. An existing
+administrator dashboard can consume the API; the bundled console is optional. Start with
+[API integration](API_INTEGRATION.md) for authentication, role rationale and dashboard mapping.
+**Source of truth:** the code; this file is its map. If they disagree the
 code is right and this file is stale. Fix it in the same change: updating this file is part of
 the definition of done for any API change.
 
@@ -26,6 +28,10 @@ the definition of done for any API change.
 ### Authentication
 
 Auth.js v5, **credentials** provider, **JWT session in a cookie** (no server session table).
+External dashboard backends may use `Authorization: Bearer <token>` with administrator-owned,
+scoped API keys. Tokens are hash-only at rest, expire and are revocable. Active owner/current role
+are checked each request; key grants cannot enlarge role grants. Invalid bearer credentials return
+401 even alongside a valid cookie. Browser pages remain session-only. See [API integration](API_INTEGRATION.md).
 Staff sign in with a **phone number**; partners with an **email**. The session survives
 `auth.session_max_age_days` (30) so a supervisor stays signed in through long offline stretches.
 
@@ -119,7 +125,8 @@ Source: `lib/auth/permissions.ts` (the matrix test `lib/auth/rbac-matrix.test.ts
 | **`treasury:propose`**: propose a pool→hot-wallet refill, cancel your own proposal, record the transfer reference | | | ✅ | |
 | **`treasury:approve`**: approve or reject a refill proposed by someone else, check that the funds arrived | | | ✅ | |
 | `treasury:topup:initiate`: read the hot-wallet float (`GET /treasury/float`) | | | ✅ | |
-| `session:metrics:read:*`, `report:generate:own`, `apikey:manage` | per role, see the file; most are for milestones not built yet | | | |
+| `apikey:manage` - issue/list/revoke API keys (administrator session only) | | | ✅ | |
+| `session:metrics:read:*`, `report:generate:own` | per role, see the file; several reporting endpoints remain planned | | | |
 
 `payout:execute` exists in **no** role - paying is a system function. There is no endpoint that
 executes a payout and none will be added.
@@ -147,8 +154,8 @@ register ──► pending ──authorize──► active ◄──authorize─
                 └───────revoke───────┴──┴──────revoke───────┘
 ```
 
-- **`pending`** - registered by a supervisor, not yet vetted. Cannot be weighed, cannot be issued an
-  NFC tag, is not in the offline cache, cannot be paid.
+- **`pending`** - registered by a supervisor, not yet vetted. Can receive an identity card during
+  registration, but cannot be weighed, is not in the offline cache and cannot be paid.
 - **`active`** - *authorized*. Everything works. (Same word the API has always used for "usable".)
 - **`revoked`** - switched off. Events for them are rejected at sync (`collector_not_authorized`).
 
@@ -388,6 +395,28 @@ internal storage address a browser cannot reach and the bucket is private.
 
 All paths are under `/api/v1`. "Scope" is what the caller needs.
 
+### Staff API keys ✅
+
+Management requires an administrator session, not a bearer key. A valid bearer receives403;
+an invalid one receives401. Keys belong to the creating administrator; no arbitrary impersonation,
+collector/partner key issuance or browser-page login is supported.
+
+- `POST /api-keys`: strict body `{ name, scopes, expiresAt }`; name1-80 characters; nonempty unique
+  scopes granted to the administrator; ISO-8601 expiry strictly in the future and within
+  `auth.api_key_max_age_days`. No `ownerId` or role is accepted. Returns
+  `201 { key: ApiKeyMetadata, token: string }`; secret shown once.
+- `GET /api-keys?cursor=&limit=`: `{ keys: ApiKeyMetadata[], nextCursor }`, newest first, includes
+  expired/revoked records. Shared cursor pagination, default50, maximum100.
+- `POST /api-keys/:id/revoke`: no body needed, `200 { key: ApiKeyMetadata }`, idempotent; first revoker
+  and timestamp preserved. Administrators may revoke another administrator's key; unknown id returns404.
+
+`ApiKeyMetadata` = `{ id, ownerId, name, tokenPrefix, scopes, createdAt, expiresAt, revokedAt, revokedBy }`.
+Metadata never includes `tokenHash`; only creation includes the raw token. Management responses,
+including errors, use `Cache-Control: private, no-store`. Invalid expiry, non-delegable scope or
+unknown field returns `400 invalid_request`. `payout:execute` and `apikey:manage` are non-delegable.
+Nested collector/payout domain guards also intersect key grants. Enrol-only keys cannot preauthorize
+registrations or replace verified wallets. Keys preserve actor-based self-approval restrictions.
+
 ### 5.1 Collectors ✅
 
 #### `POST /collectors` - register · scope `collector:enrol`
@@ -472,7 +501,8 @@ Body `{ "rawCode" }`; same as `…/destinations` but always `200`, response `{ c
 Kept so the current enrol screen works. Migrate to `…/destinations`.
 
 #### `POST /collectors/:id/tags` - issue/replace an NFC tag · scope `collector:enrol`
-`{ "newTagId": "<NFC serial>" }` → `201 { tag }`. **`409 collector_not_authorized` unless the collector is `active`.**
+`{ "newTagId": "<NFC serial>" }` → `201 { tag }`. Pending or active collectors may receive identity cards;
+tagging never authorizes work/payment. A revoked collector returns `409 collector_not_authorized`.
 The tag *content* should be `reference.payload`; `newTagId` is the chip's serial, used only for revocation.
 
 #### `POST /collectors/:id/tags/revoke` · scope `tag:revoke` (admin)
@@ -480,6 +510,9 @@ The tag *content* should be `reference.payload`; `newTagId` is the chip's serial
 
 #### `GET /tags/:tagId` - resolve a tapped tag · scope `collector:read`
 `200 { collector, tag }` · `410 tag_revoked` · `409 collector_not_authorized` · `404` never issued.
+This weighing lookup still requires an active collector. To check a pending card's association,
+read `GET /collectors/:id` and compare its `nfcTagId` with the chip serial and its public reference
+with the card contents. Never treat identity read-back as collector authorization.
 
 ### 5.2 Sessions, rates, roster ✅
 
@@ -892,6 +925,22 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 ## 8. Changelog for the frontend
 
 Newest first. Anything here may need a UI change.
+
+### 2026-10-06 - Scoped dashboard API keys
+
+- Migration 0014 adds hash-only staff keys with explicit scopes, mandatory expiry and revocation.
+  API handlers pass their request to the bearer-aware gate; browser auth remains cookie-only.
+- Session-only administrator issue/list/revoke; active owner and current role checked per bearer
+  request; invalid bearer fails closed. Nested domain guards preserve limited key permissions.
+- New `auth.api_key_max_age_days`: default 90, range 1-365 days. No execution or key-management delegation.
+
+### 2026-10-06 - Supervisor-issued identity cards and API-first operators
+
+- `POST /collectors/:id/tags` accepts pending identities as well as active ones. It does not change
+  authorization status; revoked identities remain blocked. Weighing lookup/cache/ingest/payment retain
+  their active-only gate. Card setup belongs to supervisors during registration, not to collectors.
+- The existing admin console is an optional reference client. Operators use their own dashboards;
+  [API integration](API_INTEGRATION.md) maps endpoints and explains the actual authentication limits.
 
 **2026-10-06: field-first recipients, evidence and operational wallet**
 - Migration 0013 adds recipient type, derived evidence fields and immutable-review audit metadata without

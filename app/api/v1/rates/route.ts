@@ -19,9 +19,9 @@ const bodySchema = z.object({
   effectiveFrom: z.coerce.date().optional(),
 });
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request?: Request): Promise<NextResponse> {
   try {
-    await requireScope('rates:read');
+    await requireScope('rates:read', request);
     return NextResponse.json({ rates: await currentRates(getDb()) });
   } catch (error) {
     return errorResponse(error);
@@ -30,7 +30,7 @@ export async function GET(): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('session:configure');
+    await requireScope('session:configure', request);
     const { material, rateFiatMinor, effectiveFrom } = bodySchema.parse(
       await request.json().catch(() => ({})),
     );

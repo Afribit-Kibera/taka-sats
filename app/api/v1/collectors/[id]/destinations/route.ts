@@ -42,7 +42,7 @@ type RouteParams = { readonly params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:enrol');
+    const actor = await requireScope('collector:enrol', request);
 
     // Like registering a collector, a plain supervisor writes a wallet only inside an active
     // assigned session (M2-7); hub_lead/admin are not shift-bound.
@@ -72,9 +72,9 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
   }
 }
 
-export async function GET(_request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:read');
+    const actor = await requireScope('collector:read', request);
 
     const { id } = paramsSchema.parse(await params);
     const db = getDb();

@@ -12,7 +12,7 @@
  */
 
 import { eq, sql } from 'drizzle-orm';
-import { roleHasScope } from '@/lib/auth/permissions';
+import { actorHasScope } from '@/lib/auth/permissions';
 import { getSettings } from '@/lib/config';
 import type { Database, Tx } from '@/lib/db/client';
 import { collectors } from '@/lib/db/schema';
@@ -75,7 +75,7 @@ export async function enrolCollector(
   }
 
   const gated = settings.collectors.authorization_required;
-  const authorizedByStaff = gated && roleHasScope(actor.role, 'collector:authorize');
+  const authorizedByStaff = gated && actorHasScope(actor, 'collector:authorize');
   const active = !gated || authorizedByStaff;
   const siteCode = parsed.siteCode ?? (settings.collectors.default_site_code || undefined);
 

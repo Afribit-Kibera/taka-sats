@@ -26,7 +26,7 @@ const querySchema = z.object({
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const actor = await requireScope('reconciliation:write');
+    const actor = await requireScope('reconciliation:write', request);
     const input = recyclerSaleInputSchema.parse(await request.json().catch(() => null));
     const { sale } = await recordRecyclerSale(getDb(), input, actor.id);
     return NextResponse.json({ sale }, { status: 201 });
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('report:generate:all');
+    await requireScope('report:generate:all', request);
     const { cursor, limit } = querySchema.parse(Object.fromEntries(request.nextUrl.searchParams));
     return NextResponse.json(await listRecyclerSales(getDb(), { cursor, limit }));
   } catch (error) {

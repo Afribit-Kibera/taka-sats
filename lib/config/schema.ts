@@ -57,6 +57,8 @@ const collectorsSchema = z.object({
 });
 
 const authSchema = z.object({
+  /** Mandatory API-key expiry may be no further than this many days after issuance. */
+  api_key_max_age_days: z.int().min(1).max(365),
   /** How long a supervisor's signed-in session survives, incl. fully offline (§3.1, ADR-0002). */
   session_max_age_days: z.int().positive(),
   /** Failed logins per identifier per window before it is locked out. 0 disables the throttle. */

@@ -12,9 +12,9 @@ import { requireScope } from '@/lib/auth/session';
 import { getSettings } from '@/lib/config';
 import { getLightningProvider } from '@/lib/lightning';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request?: Request): Promise<NextResponse> {
   try {
-    await requireScope('treasury:topup:initiate');
+    await requireScope('treasury:topup:initiate', request);
 
     let balance;
     try {

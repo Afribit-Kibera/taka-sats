@@ -12,13 +12,20 @@
  */
 
 import { auth } from '@/auth';
-import { type Role, type Scope, roleHasScope } from './permissions';
+import { getDb } from '@/lib/db/client';
+import { authenticateApiKey, bearerToken } from './api-keys';
+import { actorHasScope, type Role, type Scope } from './permissions';
+
+export { actorHasScope } from './permissions';
 
 export type Actor = {
   /** `partner` when the signed-in role is `partner`, else `supervisor` (staff). */
   readonly kind: 'supervisor' | 'partner';
   readonly id: string;
   readonly role: Role;
+  /** Present only for an API bearer credential; browser auth never reads bearer keys. */
+  readonly apiKeyId?: string;
+  readonly scopes?: readonly Scope[];
 };
 
 export class UnauthorizedError extends Error {
@@ -36,7 +43,14 @@ export class ForbiddenError extends Error {
 }
 
 /** The signed-in actor, or null if there is no valid session. */
-export async function getActor(): Promise<Actor | null> {
+export async function getActor(request?: Request): Promise<Actor | null> {
+  if (request) {
+    const token = bearerToken(request);
+    if (token !== null) {
+      // Any Authorization header selects bearer auth. Invalid headers cannot use a cookie.
+      return token === false ? null : authenticateApiKey(getDb(), token);
+    }
+  }
   const session = await auth();
   if (!session?.user) {
     return null;
@@ -49,12 +63,12 @@ export async function getActor(): Promise<Actor | null> {
  * @throws {UnauthorizedError} no valid session.
  * @throws {ForbiddenError} the signed-in role does not hold `scope`.
  */
-export async function requireScope(scope: Scope): Promise<Actor> {
-  const actor = await getActor();
+export async function requireScope(scope: Scope, request?: Request): Promise<Actor> {
+  const actor = await getActor(request);
   if (!actor) {
     throw new UnauthorizedError();
   }
-  if (!roleHasScope(actor.role, scope)) {
+  if (!actorHasScope(actor, scope)) {
     throw new ForbiddenError(scope);
   }
   return actor;
@@ -64,13 +78,26 @@ export async function requireScope(scope: Scope): Promise<Actor> {
  * Pass if the actor holds ANY of `scopes` (e.g. an endpoint readable by
  * staff *or* a partner, each with a different scope). 403 names the first.
  */
-export async function requireAnyScope(scopes: readonly [Scope, ...Scope[]]): Promise<Actor> {
-  const actor = await getActor();
+export async function requireAnyScope(
+  scopes: readonly [Scope, ...Scope[]],
+  request?: Request,
+): Promise<Actor> {
+  const actor = await getActor(request);
   if (!actor) {
     throw new UnauthorizedError();
   }
-  if (!scopes.some((scope) => roleHasScope(actor.role, scope))) {
+  if (!scopes.some((scope) => actorHasScope(actor, scope))) {
     throw new ForbiddenError(scopes[0]);
+  }
+  return actor;
+}
+
+/** Key lifecycle management is deliberately unavailable to bearer credentials. */
+export async function requireAdminSession(request: Request): Promise<Actor> {
+  const actor = await getActor(request);
+  if (!actor) throw new UnauthorizedError();
+  if (actor.apiKeyId || actor.role !== 'admin' || !actorHasScope(actor, 'apikey:manage')) {
+    throw new ForbiddenError('apikey:manage');
   }
   return actor;
 }

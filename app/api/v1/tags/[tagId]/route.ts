@@ -30,9 +30,9 @@ const paramsSchema = z.object({ tagId: z.string().trim().min(1) });
 
 type RouteParams = { readonly params: Promise<{ tagId: string }> };
 
-export async function GET(_request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('collector:read');
+    const actor = await requireScope('collector:read', request);
 
     const { tagId } = paramsSchema.parse(await params);
     const db = getDb();

@@ -22,7 +22,7 @@ type RouteParams = { readonly params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
-    const actor = await requireScope('anomaly:review');
+    const actor = await requireScope('anomaly:review', request);
     const { id } = paramsSchema.parse(await params);
     const input = reviewInputSchema.parse(await request.json().catch(() => null));
     const { anomaly, changed } = await reviewAnomaly(getDb(), id, input, actor.id);

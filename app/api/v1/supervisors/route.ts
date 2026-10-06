@@ -25,7 +25,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('session:configure');
+    await requireScope('session:configure', request);
 
     const params = request.nextUrl.searchParams;
     const { includeInactive, role } = querySchema.parse({

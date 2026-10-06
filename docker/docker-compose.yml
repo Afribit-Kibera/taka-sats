@@ -10,6 +10,7 @@ x-app-environment: &app-environment
   NOSTR_RELAY_URL: ws://relay:8080
   # Auth.js JWT signing secret (M2-1) — required for /api/auth/* to boot.
   AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+  TAKASATS__AUTH__API_KEY_MAX_AGE_DAYS: ${TAKASATS__AUTH__API_KEY_MAX_AGE_DAYS:-90}
   CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET}
   # Lightning provider secrets (D-21 §13.1) — only the one matching
   # lightning.float_provider needs a real value; unused otherwise.

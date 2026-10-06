@@ -105,6 +105,9 @@ simulated and no real money moves.
 
 ## Documentation
 
+Using your own operator dashboard? Start with [API integration and access](docs/API_INTEGRATION.md).
+The supervisor field app and backend API do not require a separate administrator dashboard.
+
 | Understand                                    | Operate                                              | Build                                             |
 | --------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
 | [Verification protocol](docs/VERIFICATION.md) | [Run it for your community](docs/GETTING_STARTED.md) | [Development](docs/DEVELOPMENT.md)                |
