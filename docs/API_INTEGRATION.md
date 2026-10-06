@@ -97,6 +97,19 @@ make private endpoints public, weaken cookie protections or embed provider keys 
 
 All paths below are relative to `/api/v1`; use [BACKEND.md](BACKEND.md) for exact contracts.
 
+### Before a field test
+
+Provision separate staff logins, publish the material rates, and create/start a session assigned to
+the participating supervisors with the actual collection location and time window. An authenticated
+supervisor without an active assigned session receives `403 no_active_session`; a successful login
+does not remove that safety gate. `GET /sessions/current` and `GET /weigh/bootstrap` check readiness.
+
+Supervisors then register recipients and issue identity cards. Authorize pending recipients through
+the API and verify their receive-only destinations before weighing. The field app saves weight/photo
+evidence locally; the worker checks it before any payment. Test the phone, card and print alignment on
+one sample before issuing a batch. Live sync may auto-pay eligible work, so use actual supervised
+collections rather than fabricated production events.
+
 | Dashboard function | Endpoints |
 |---|---|
 | Programme identity and health | `GET /meta`, `GET /health` |
