@@ -101,6 +101,9 @@ export function WeighCollectorStep({
                   <span className="block truncate font-mono text-sm text-muted-foreground">
                     {collector.publicCode ?? collector.id}
                   </span>
+                  <span className="text-xs text-muted-foreground">
+                    {t(collector.recipientType === 'collective' ? 'collective' : 'individual')}
+                  </span>
                 </span>
                 {active ? (
                   <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground">

@@ -10,7 +10,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { errorResponse } from '@/lib/api/errors';
-import { requireScope } from '@/lib/auth/session';
+import { requireAnyScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
 import { ANOMALY_TYPES } from '@/lib/db/schema';
 import { ANOMALY_STATUSES, listAnomalies } from '@/lib/fraud';
@@ -26,7 +26,7 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireScope('anomaly:review');
+    await requireAnyScope(['anomaly:review', 'payout:approve']);
     const { cursor, limit, ...filter } = querySchema.parse(
       Object.fromEntries(request.nextUrl.searchParams),
     );

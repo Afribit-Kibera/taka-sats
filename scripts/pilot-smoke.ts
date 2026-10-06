@@ -166,8 +166,15 @@ async function main(): Promise<void> {
     return;
   }
   const meta = await anon.call('GET', '/api/v1/meta');
-  step(meta.status === 200, 'meta: deployment facts are public', meta);
+  if (!step(meta.status === 200, 'meta: deployment facts are public', meta)) return;
   const demo = meta.body.lightning?.demo === true;
+  // Risk-based sync may pay before the old approval-only guard. Never create live smoke work
+  // unless the owner explicitly authorizes the supervised real-payment run.
+  if (!demo && !has('pay-real')) {
+    throw new Error(
+      'Live rail: write-based smoke requires supervised --pay-real opt-in. No records or payments were created.',
+    );
+  }
   console.log(
     `  provider: ${meta.body.lightning?.floatProvider} (${demo ? 'DEMO — nothing is sent' : 'REAL money'})`,
   );

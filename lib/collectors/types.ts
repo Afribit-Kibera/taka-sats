@@ -40,6 +40,7 @@ export type AddressSource = z.infer<typeof addressSourceSchema>;
 export const enrolCollectorInputSchema = z.object({
   id: z.uuid().optional(),
   alias: z.string().trim().min(1, 'alias is required').max(200),
+  recipientType: z.enum(['individual', 'collective']).optional(),
   addressSource: addressSourceSchema.optional(),
   /** Site segment of the public code (`KBR` in `TS-KBR-0042`); falls back to config. */
   siteCode: z

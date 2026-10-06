@@ -1,5 +1,22 @@
 # Security Policy
 
+## Field-first changes (2026-10-06)
+
+- Payment execution remains worker-only; destination and amount are resolved server-side. Strict review
+  bodies accept only decision/reason. The recorder cannot approve their own work, and snapshot-bound
+  approval is invalidated by changed evidence, destination or flags. No human gains `payout:execute`.
+- Stored photos and completed idempotent anomaly checks precede risk-mode payment. Required OCR must match
+  within policy for default auto-pay; malformed/ambiguous/upstream failures require review. Hash mismatch
+  cannot be overridden. Rejected/reweigh decisions cannot be retried or swept into payment.
+- OpenRouter receives photo bytes, not structured identity/wallet/GPS fields or entered kg. Photos can
+  themselves identify people: train staff to frame the display/load. Routing requires no provider data
+  collection and zero retention; output is schema-validated and token/time bounded. This does not
+  guarantee image anonymity or model accuracy; no model tool calls or signed-fact rewrites are allowed.
+- Hub leads gain operational float/live mass-balance and anomaly-list read only. Funding POST routes
+  preserve 401/403 and return 410 to authorized staff. Historical records/keys are not deleted or exposed.
+- Blank NFC writes refuse overwrite and require exact identity read-back before linking. A card is
+  clonable public identity, not login/payment authorization or a wallet. Server gates remain authoritative.
+
 Taka Sats moves real money for people with little margin for error. Security reports are
 welcome and taken seriously.
 

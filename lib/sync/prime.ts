@@ -24,6 +24,7 @@ type BootstrapResponse = {
   collectors: {
     id: string;
     alias: string;
+    recipientType?: 'individual' | 'collective';
     publicCode?: string;
     nfcTagId: string | null;
     status: string;

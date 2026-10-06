@@ -1,5 +1,19 @@
 # Collector tag - hardware spec
 
+## Current identity-only card workflow
+
+On Android Chrome, open `/cards`, choose an authorized recipient and place a blank writable NFC card
+against the phone. The app writes `takasats:<publicCode>` plus the canonical HTTPS `/c/<code>` URL,
+reads back both records and links the chip serial server-side. It refuses overwrite of nonblank cards.
+If linking fails after writing, use the link-written-card recovery action; do not rewrite the card.
+Use Check a card to confirm lookup, then test a real tap in the field. These hardware steps still need
+verification on the actual phone/cards; browser mocks do not certify NFC compatibility.
+
+Print the selected recipient's identity from `/cards` or the collector detail: CR80 85.6 x 53.98 mm,
+QR/public code, alias and identity-only warning. Use actual size (100%) and check alignment against the
+printer/card stock. The QR/code remains usable without NFC. Never print or encode a wallet Pay link,
+private key or login credential. Blank cards alone do not guarantee a suitable PVC printer or chip type.
+
 | | |
 |---|---|
 | Status | M1-11 first draft |

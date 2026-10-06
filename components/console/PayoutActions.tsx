@@ -3,6 +3,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { type FormEvent, useState } from 'react';
 import { useConsoleUser } from '@/components/console/context';
 import { ActionButton, ErrorNotice, KeyValue, Panel, TextField } from '@/components/console/kit';
@@ -29,16 +30,23 @@ export type PayoutRow = {
   createdAt: string;
   settledAt: string | null;
   openFlags: number;
+  recipientType?: 'individual' | 'collective';
+  reviewDecision?: 'approved' | 'rejected' | 'reweigh' | null;
+  reviewReason?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
 };
 
 /** Approve and retry: the two one-click payout actions (the API enforces the second person). */
 export function PayoutActions({
   payout,
   onChanged,
+  showReviewForm = false,
 }: {
   readonly payout: Pick<PayoutRow, 'id' | 'status'> &
-    Partial<Pick<PayoutRow, 'amountSats' | 'collectorAlias'>>;
+    Partial<Pick<PayoutRow, 'amountSats' | 'collectorAlias' | 'reviewDecision' | 'lastError'>>;
   readonly onChanged: () => void;
+  readonly showReviewForm?: boolean;
 }) {
   const t = useTranslations('Console.payouts');
   const user = useConsoleUser();
@@ -48,21 +56,21 @@ export function PayoutActions({
   return (
     <div className="flex flex-wrap gap-2">
       {payout.status === 'pending_approval' ? (
-        <ActionButton
-          label={t('approve')}
-          testId="approve-payout"
-          confirm={t('approveConfirm', {
-            name: payout.collectorAlias ?? '',
-            sats:
-              payout.amountSats === null || payout.amountSats === undefined
-                ? ''
-                : formatSats(payout.amountSats),
-          })}
-          run={() => api(`/payouts/${payout.id}/approve`, { method: 'POST' })}
-          onDone={onChanged}
-        />
+        showReviewForm ? (
+          <ReviewDecision payout={payout} onChanged={onChanged} />
+        ) : (
+          <Link
+            href={`/payouts/${payout.id}`}
+            className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium underline"
+            data-testid="open-payout-review"
+          >
+            {t('openReview')}
+          </Link>
+        )
       ) : null}
-      {payout.status === 'failed' ? (
+      {payout.status === 'failed' &&
+      !['rejected', 'reweigh'].includes(payout.reviewDecision ?? '') &&
+      !['review_rejected', 'reweigh_required'].includes(payout.lastError ?? '') ? (
         <ActionButton
           label={t('retry')}
           variant="outline"
@@ -71,6 +79,78 @@ export function PayoutActions({
           onDone={onChanged}
         />
       ) : null}
+    </div>
+  );
+}
+
+function ReviewDecision({
+  payout,
+  onChanged,
+}: {
+  readonly payout: { id: string; amountSats?: number | null; collectorAlias?: string };
+  readonly onChanged: () => void;
+}) {
+  const t = useTranslations('Console.payouts');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiFail | null>(null);
+  async function decide(decision: 'approved' | 'rejected' | 'reweigh'): Promise<void> {
+    if (!reason.trim() || busy) return;
+    if (
+      decision === 'approved' &&
+      !window.confirm(
+        t('approveConfirm', {
+          name: payout.collectorAlias ?? '',
+          sats: formatSats(payout.amountSats ?? null),
+        }),
+      )
+    )
+      return;
+    setBusy(true);
+    setError(null);
+    const res = await api(`/payouts/${payout.id}/review`, {
+      method: 'POST',
+      body: { decision, reason: reason.trim() },
+    });
+    setBusy(false);
+    if (res.ok) onChanged();
+    else setError(res);
+  }
+  return (
+    <div className="w-full max-w-lg space-y-3">
+      <TextField
+        label={t('reviewReason')}
+        hint={t('reviewReasonHint')}
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        maxLength={1000}
+        disabled={busy}
+        data-testid="review-reason"
+      />
+      <div className="flex flex-wrap gap-2">
+        {(['approved', 'rejected', 'reweigh'] as const).map((decision) => (
+          <Button
+            key={decision}
+            type="button"
+            variant={decision === 'approved' ? 'default' : 'outline'}
+            size="sm"
+            disabled={busy || !reason.trim()}
+            onClick={() => void decide(decision)}
+            data-testid={decision === 'approved' ? 'approve-payout' : `${decision}-payout`}
+          >
+            {busy
+              ? t('working')
+              : t(
+                  decision === 'approved'
+                    ? 'approve'
+                    : decision === 'rejected'
+                      ? 'reject'
+                      : 'reweigh',
+                )}
+          </Button>
+        ))}
+      </div>
+      {error ? <ErrorNotice error={error} /> : null}
     </div>
   );
 }

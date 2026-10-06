@@ -89,6 +89,8 @@ export type SyncStatus =
 export type CachedCollector = {
   readonly id: string;
   readonly alias: string;
+  /** Older offline directories predate collectives; absence means individual. */
+  readonly recipientType?: 'individual' | 'collective';
   /** `TS-KBR-0042` (D-24) — searchable offline. Absent in a cache primed before it existed. */
   readonly publicCode?: string;
   readonly nfcTagId: string | null;

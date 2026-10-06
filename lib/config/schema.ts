@@ -109,6 +109,8 @@ const ratesSchema = z.object({
 });
 
 const payoutsSchema = z.object({
+  approval_mode: z.enum(['legacy', 'risk_based']),
+  review_threshold_fiat_minor: z.int().nonnegative(),
   /** A payout above this waits for a distinct approver. 0 = every payout is held for review. */
   second_signoff_threshold_sats: z.int().nonnegative(),
   /** The first payout to a never-paid destination needs an approver whatever its size. */
@@ -136,6 +138,17 @@ const treasurySchema = z.object({
   topup_approvals_required: z.int().min(1).max(10),
   /** Ceiling on the hot-wallet float in sats, counting funding already in flight. 0 = no cap. */
   hot_wallet_cap_sats: z.int().nonnegative(),
+});
+
+const verificationSchema = z.object({
+  provider: z.enum(['none', 'openrouter']),
+  model: nonEmpty,
+  timeout_ms: z.int().min(1000).max(120000),
+  max_tokens: z.int().min(128).max(4096),
+  min_confidence: z.number().min(0).max(1),
+  ocr_required_for_autopay: z.boolean(),
+  weight_tolerance_kg: z.number().nonnegative(),
+  max_autopay_weight_kg: z.number().positive().max(999.999),
 });
 
 const reconciliationSchema = z.object({
@@ -185,6 +198,7 @@ export const settingsSchema = z
     rates: ratesSchema,
     payouts: payoutsSchema,
     treasury: treasurySchema,
+    verification: verificationSchema,
     reconciliation: reconciliationSchema,
     anomaly: anomalySchema,
     scheduling: schedulingSchema,

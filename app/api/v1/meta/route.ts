@@ -10,7 +10,7 @@ import { NextResponse } from 'next/server';
 import { getSettings } from '@/lib/config';
 
 export function GET(): NextResponse {
-  const { programme, collectors, lightning } = getSettings();
+  const { programme, collectors, lightning, verification, payouts } = getSettings();
 
   return NextResponse.json({
     programme: {
@@ -31,6 +31,15 @@ export function GET(): NextResponse {
       floatProvider: lightning.float_provider,
       /** true → payouts are simulated (the `fake` provider): show a "demo mode" banner. */
       demo: lightning.float_provider === 'fake',
+    },
+    verification: {
+      provider: verification.provider,
+      model: verification.provider === 'openrouter' ? verification.model : null,
+      ocrRequiredForAutopay: verification.ocr_required_for_autopay,
+    },
+    payouts: {
+      approvalMode: payouts.approval_mode,
+      reviewThresholdFiatMinor: payouts.review_threshold_fiat_minor,
     },
     /** The commit this build came from, when the host provides one. */
     build: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_SHA ?? null,

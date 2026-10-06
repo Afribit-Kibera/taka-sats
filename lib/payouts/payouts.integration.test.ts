@@ -40,9 +40,13 @@ import {
 } from './index';
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);
+vi.mock('@/lib/storage', () => ({
+  photoUrlFor: vi.fn(async () => 'https://storage.example/photo'),
+}));
 
 /** Payout policy for a test; the engine reads it through `getSettings()`. */
 function configure({ threshold = 50_000, firstPayout = false } = {}): void {
+  process.env.TAKASATS__PAYOUTS__APPROVAL_MODE = 'legacy';
   process.env.TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS = String(threshold);
   process.env.TAKASATS__PAYOUTS__REQUIRE_APPROVAL_FIRST_PAYOUT = String(firstPayout);
   resetSettingsCache();
@@ -78,6 +82,7 @@ describe.skipIf(!hasDatabase)('lib/payouts (integration)', () => {
     vi.restoreAllMocks();
     delete process.env.TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS;
     delete process.env.TAKASATS__PAYOUTS__REQUIRE_APPROVAL_FIRST_PAYOUT;
+    delete process.env.TAKASATS__PAYOUTS__APPROVAL_MODE;
     resetSettingsCache();
   });
   afterAll(async () => {

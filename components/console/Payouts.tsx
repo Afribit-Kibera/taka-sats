@@ -31,13 +31,15 @@ type Summary = {
 };
 
 /** Payouts: state filter, counts per state, approve / retry, and a link to each payout. */
-export function Payouts() {
+export function Payouts({ reviewOnly = false }: { readonly reviewOnly?: boolean }) {
   const t = useTranslations('Console.payouts');
   const user = useConsoleUser();
   const params = useSearchParams();
   const initial = params.get('status') ?? '';
-  const [status, setStatus] = useState(PAYOUT_STATES.some((s) => s === initial) ? initial : '');
-  const summary = useApi<Summary>('/payouts/summary');
+  const [status, setStatus] = useState(
+    reviewOnly ? 'pending_approval' : PAYOUT_STATES.some((s) => s === initial) ? initial : '',
+  );
+  const summary = useApi<Summary>(reviewOnly ? null : '/payouts/summary');
   const list = usePaged<PayoutRow>(`/payouts${query({ status, limit: 50 })}`, 'payouts');
 
   function changed(): void {
@@ -48,52 +50,59 @@ export function Payouts() {
 
   return (
     <div>
-      <PageHeader title={t('title')} description={t('intro')} />
+      <PageHeader
+        title={t(reviewOnly ? 'reviewTitle' : 'title')}
+        description={t(reviewOnly ? 'reviewIntro' : 'intro')}
+      />
 
-      <Panel title={t('summary')} className="mb-4">
-        <DataState loading={summary.loading} error={summary.error} onRetry={summary.reload}>
-          <ul className="flex flex-wrap gap-2" aria-label={t('summary')}>
-            {summary.data?.byStatus.map((row) => (
-              <li key={row.status}>
-                <button
-                  type="button"
-                  onClick={() => setStatus(row.status === status ? '' : row.status)}
-                  aria-pressed={status === row.status}
-                  className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent aria-pressed:bg-accent"
-                >
-                  <span>{t(`filters.${row.status}`)}</span>
-                  <span className="font-display font-bold">{row.count}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {summary.data ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t('totalPriced', { sats: formatSats(summary.data.total.totalSats) })}
-            </p>
-          ) : null}
-        </DataState>
-      </Panel>
+      {!reviewOnly ? (
+        <Panel title={t('summary')} className="mb-4">
+          <DataState loading={summary.loading} error={summary.error} onRetry={summary.reload}>
+            <ul className="flex flex-wrap gap-2" aria-label={t('summary')}>
+              {summary.data?.byStatus.map((row) => (
+                <li key={row.status}>
+                  <button
+                    type="button"
+                    onClick={() => setStatus(row.status === status ? '' : row.status)}
+                    aria-pressed={status === row.status}
+                    className="flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-accent aria-pressed:bg-accent"
+                  >
+                    <span>{t(`filters.${row.status}`)}</span>
+                    <span className="font-display font-bold">{row.count}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {summary.data ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t('totalPriced', { sats: formatSats(summary.data.total.totalSats) })}
+              </p>
+            ) : null}
+          </DataState>
+        </Panel>
+      ) : null}
 
-      <div className="mb-4">
-        <label className="inline-block space-y-1.5">
-          <span className="block font-display text-xs font-medium uppercase tracking-[0.02em] text-muted-foreground">
-            {t('filter')}
-          </span>
-          <Select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            data-testid="payout-status-filter"
-          >
-            <option value="">{t('filters.all')}</option>
-            {PAYOUT_STATES.map((s) => (
-              <option key={s} value={s}>
-                {t(`filters.${s}`)}
-              </option>
-            ))}
-          </Select>
-        </label>
-      </div>
+      {!reviewOnly ? (
+        <div className="mb-4">
+          <label className="inline-block space-y-1.5">
+            <span className="block font-display text-xs font-medium uppercase tracking-[0.02em] text-muted-foreground">
+              {t('filter')}
+            </span>
+            <Select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              data-testid="payout-status-filter"
+            >
+              <option value="">{t('filters.all')}</option>
+              {PAYOUT_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {t(`filters.${s}`)}
+                </option>
+              ))}
+            </Select>
+          </label>
+        </div>
+      ) : null}
 
       <DataState
         loading={list.loading}

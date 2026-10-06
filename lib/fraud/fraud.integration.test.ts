@@ -416,7 +416,11 @@ describe.skipIf(!hasDatabase)('lib/fraud (integration)', () => {
 
       await runReconciliation(db, period(), world.adminId); // a new run is new rows
       expect((await listReconciliationReports(db)).reports).toHaveLength(2);
-      expect(await flagsOf('mass_balance_variance')).toHaveLength(2);
+      const followupFlags = await flagsOf('mass_balance_variance');
+      expect(followupFlags).toHaveLength(4); // two reports plus a future-review flag per affected supervisor/session
+      expect(followupFlags.filter((flag) => flag.supervisorId === world.recorderId)).toHaveLength(
+        2,
+      );
     });
 
     it('a run within tolerance raises no flag', async () => {

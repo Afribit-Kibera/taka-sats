@@ -36,6 +36,8 @@ export type EventView = {
   readonly syncedAt: Date;
   readonly verificationLevel: string;
   readonly verificationStatus: string;
+  readonly evidenceStatus: string;
+  readonly ocrWeightKg: number | null;
   readonly geo:
     | {
         readonly kind: 'fix';
@@ -159,6 +161,8 @@ function toView(
     syncedAt: e.syncedAt,
     verificationLevel: e.verificationLevel,
     verificationStatus: e.verificationStatus,
+    evidenceStatus: e.evidenceStatus,
+    ocrWeightKg: e.ocrWeightKg === null ? null : Number(e.ocrWeightKg),
     geo: fixed
       ? {
           kind: 'fix',

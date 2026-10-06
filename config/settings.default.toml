@@ -92,6 +92,8 @@ seed = [
 ]
 
 [payouts]
+approval_mode = "risk_based"            # normal evidence-backed collections auto-pay; legacy retains previous universal/first-payment holds
+review_threshold_fiat_minor = 100000    # review strictly above this fiat minor-unit value; 0 holds every payout
 second_signoff_threshold_sats = 50000    # a payout ABOVE this is held until a distinct approver signs off (FR-3.2). 0 holds EVERY payout for review
 require_approval_first_payout = true     # the first payout to any new destination also needs an approver, whatever its size
 float_low_balance_alert_sats  = 200000    # the worker alerts admin below this (FR-7.2)
@@ -108,6 +110,16 @@ hot_wallet_cap_sats      = 0             # a proposal that would take the hot wa
 
 [reconciliation]
 variance_tolerance_pct = 5               # paid-kg vs sold-kg variance above this is flagged (FR-3.5)
+
+[verification]
+provider = "none"                       # openrouter enables server-side scale-display evidence; none honestly remains V0 manual
+model = "mistralai/mistral-small-3.2-24b-instruct" # vision + structured JSON via OpenRouter; secrets stay in OPENROUTER_API_KEY
+timeout_ms = 30000                      # bounded upstream evidence request
+max_tokens = 256                        # cap the scale-reading response and provider spend
+min_confidence = 0.9                    # ambiguous display readings require staff review
+ocr_required_for_autopay = true         # safe default: manual/unreadable evidence requires a distinct staff review
+weight_tolerance_kg = 0.1               # scale display vs entered weight discrepancy above this requires review
+max_autopay_weight_kg = 100             # larger collections require review
 
 [anomaly]
 identical_weight_repeat_count = 4         # N identical weights from one supervisor -> flag

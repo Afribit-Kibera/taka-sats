@@ -42,6 +42,7 @@ type Destination = {
 type CollectorFull = {
   id: string;
   alias: string;
+  recipientType?: 'individual' | 'collective';
   publicCode: string;
   status: string;
   nfcTagId: string | null;
@@ -132,6 +133,10 @@ export function CollectorDetail({ id }: { readonly id: string }) {
                     v: <DomainPill domain="collector" value={collector.status} />,
                   },
                   { k: t('publicCode'), v: <Mono>{collector.publicCode}</Mono> },
+                  {
+                    k: t('recipientType'),
+                    v: t(collector.recipientType === 'collective' ? 'collective' : 'individual'),
+                  },
                   { k: t('qrPayload'), v: <Mono>{collector.reference.payload}</Mono> },
                   { k: t('enrolledAt'), v: formatDateTime(collector.enrolledAt, tz) },
                   {

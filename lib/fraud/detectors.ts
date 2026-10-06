@@ -3,7 +3,8 @@
 /**
  * The per-event anomaly detectors (FR-3.6, ADR-0006). Each looks at one freshly ingested
  * collection event and writes `anomaly_flags` for a human to review. NOTHING here ever blocks:
- * a flag does not fail a sync, hold a payout or change a result. Every detector is idempotent
+ * a flag does not fail a sync or change its recorded facts. The payout risk policy consumes
+ * these flags before automatic payment. Every detector is idempotent
  * (see `raiseFlag`), so running them twice — a resend, a backfill — adds nothing.
  *
  * Out-of-window and future timestamps are not detected here: ingest rejects those outright.
@@ -210,15 +211,22 @@ const DETECTORS = [
  * type only — never an event payload) and does not stop the others. The caller still wraps
  * this call: a sync must never fail over a flag.
  */
-export async function runEventDetectors(db: Queryable, eventId: string): Promise<void> {
+export async function runEventDetectors(
+  db: Queryable,
+  eventId: string,
+  options: { strict?: boolean } = {},
+): Promise<void> {
   const event = await loadEvent(db, eventId);
   if (!event) {
+    if (options.strict) throw new Error('risk_event_missing');
     return;
   }
   for (const [name, detect] of DETECTORS) {
     try {
       await detect(db, event);
     } catch (error) {
+      // Ingest remains best effort; payment/review must fail closed if a check did not run.
+      if (options.strict) throw new Error('risk_checks_unavailable', { cause: error });
       console.error(
         `[fraud] detector ${name} failed`,
         error instanceof Error ? error.name : typeof error,

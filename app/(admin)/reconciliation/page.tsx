@@ -4,6 +4,6 @@ import { requirePageScope } from '@/lib/auth/page-guard';
 import { Reconciliation } from '@/components/console/Reconciliation';
 
 export default async function ReconciliationPage() {
-  await requirePageScope('report:generate:all');
+  await requirePageScope('reconciliation:read');
   return <Reconciliation />;
 }

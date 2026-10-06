@@ -25,7 +25,6 @@ type Stats = {
 };
 type Treasury = {
   hotWallet: { available: number | null; lowBalance: boolean | null; error: string | null };
-  pendingTopups: unknown[];
 };
 
 const CAP = 100;
@@ -86,7 +85,7 @@ export function Overview() {
   const flags = useApi<{ anomalies: unknown[] }>(
     can('anomaly:review') ? `/anomalies?status=open&limit=${CAP}` : null,
   );
-  const treasury = useApi<Treasury>(can('treasury:read') ? '/treasury' : null);
+  const treasury = useApi<Treasury>(can('treasury:read') ? '/hot-wallet' : null);
   const health = useApi<{ ok: boolean; database: string }>('/health');
   const meta = useApi<Meta>('/meta');
   const stats = useApi<Stats>('/stats/summary');
@@ -141,7 +140,7 @@ export function Overview() {
               testId="count-awaiting-approval"
               label={t('awaitingApproval')}
               hint={t('awaitingApprovalHint')}
-              href="/payouts?status=pending_approval"
+              href="/review"
               value={String(count('pending_approval'))}
               loading={summary.loading}
               attention={count('pending_approval') > 0}
@@ -204,17 +203,6 @@ export function Overview() {
             value={countText(flags.data?.anomalies.length ?? 0)}
             loading={flags.loading}
             attention={(flags.data?.anomalies.length ?? 0) > 0}
-          />
-        ) : null}
-        {can('treasury:read') ? (
-          <Card
-            testId="count-proposals"
-            label={t('openProposals')}
-            hint={t('openProposalsHint')}
-            href="/treasury"
-            value={String(treasury.data?.pendingTopups.length ?? 0)}
-            loading={treasury.loading}
-            attention={(treasury.data?.pendingTopups.length ?? 0) > 0}
           />
         ) : null}
       </div>

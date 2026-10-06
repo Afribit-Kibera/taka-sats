@@ -2,6 +2,9 @@
 
 **Status:** Accepted (records D-28). Extends [ADR-0003](0003-pluggable-lightning-provider.md); does not replace it.
 
+**2026-10-06:** The in-app funding vote and arrival workflow are superseded by
+[ADR-0021](0021-field-first-risk-based-payments.md). Historical records remain; funding is external.
+
 ## Context
 
 Payouts are many and small, so they must be automatic. A wallet that pays automatically has to

@@ -59,6 +59,18 @@ import {
 } from './index';
 
 const UNKNOWN = '00000000-0000-4000-8000-000000000000';
+vi.mock('@/lib/storage', () => ({
+  photoUrlFor: vi.fn(async () => 'https://storage.example/photo'),
+}));
+beforeEach(() => {
+  // Archived funding-domain regression tests exercise the explicit old payout policy only.
+  process.env.TAKASATS__PAYOUTS__APPROVAL_MODE = 'legacy';
+  resetSettingsCache();
+});
+afterEach(() => {
+  delete process.env.TAKASATS__PAYOUTS__APPROVAL_MODE;
+  resetSettingsCache();
+});
 
 describe('treasury funding vote: refusals that need no database', () => {
   // These calls must fail before touching the database, so a dummy one proves it.

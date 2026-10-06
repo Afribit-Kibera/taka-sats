@@ -37,6 +37,25 @@ afterEach(async () => {
 });
 
 describe('primeWeighCache', () => {
+  it('keeps collective identity in the offline directory across a reopen', async () => {
+    await primeWeighCache(async () =>
+      jsonResponse({
+        ...BOOTSTRAP,
+        collectors: [
+          {
+            id: 'group-1',
+            alias: 'Green Crew',
+            publicCode: 'TS-GRP-0001',
+            recipientType: 'collective',
+            nfcTagId: null,
+            status: 'active',
+          },
+        ],
+      }),
+    );
+    await closeSyncDb();
+    expect((await searchCachedCollectors('Green'))[0]?.recipientType).toBe('collective');
+  });
   it('on a good response, writes the session config + collectors and reports "network"', async () => {
     const result = await primeWeighCache(async () => jsonResponse(BOOTSTRAP));
     expect(result.source).toBe('network');

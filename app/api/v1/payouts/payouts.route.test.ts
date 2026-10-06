@@ -6,6 +6,10 @@ import { NextRequest } from 'next/server';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/auth', () => ({ auth: vi.fn() }));
+vi.mock('@/lib/storage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/storage')>()),
+  photoUrlFor: vi.fn(async () => 'https://storage.example/photo'),
+}));
 vi.mock('@/lib/jobs', () => ({ enqueueProcessPayoutSafely: vi.fn(async () => undefined) }));
 
 import { auth } from '@/auth';
@@ -128,6 +132,7 @@ describe.skipIf(!hasDatabase)('/api/v1/payouts — integration', () => {
   const json = async (response: Response) => (await response.json()) as Record<string, any>;
 
   beforeEach(async () => {
+    process.env.TAKASATS__PAYOUTS__APPROVAL_MODE = 'legacy';
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(enqueueProcessPayoutSafely).mockClear();
@@ -144,6 +149,7 @@ describe.skipIf(!hasDatabase)('/api/v1/payouts — integration', () => {
     authMock.mockResolvedValue(session(world.adminId, 'admin'));
   });
   afterEach(() => {
+    delete process.env.TAKASATS__PAYOUTS__APPROVAL_MODE;
     vi.restoreAllMocks();
     delete process.env.TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS;
     delete process.env.TAKASATS__PAYOUTS__REQUIRE_APPROVAL_FIRST_PAYOUT;
@@ -182,6 +188,11 @@ describe.skipIf(!hasDatabase)('/api/v1/payouts — integration', () => {
           'openFlags',
           'provider',
           'providerPaymentRef',
+          'recipientType',
+          'reviewDecision',
+          'reviewedBy',
+          'reviewedAt',
+          'reviewReason',
           'settledAt',
           'status',
         ].sort(),

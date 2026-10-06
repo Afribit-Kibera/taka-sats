@@ -1,7 +1,7 @@
 # The operator console
 
 The admin console (`app/(admin)`) is how staff run a programme day without touching `curl`: vetting
-collectors, approving payouts, running the treasury vote, reviewing evidence and verifying the
+collectors, reviewing payout exceptions, monitoring the operating hot wallet and verifying the
 ledger. It is deliberately plain: it composes the shared UI primitives in the existing token
 styling, and a designer can restyle it later without touching its logic.
 
@@ -9,8 +9,9 @@ styling, and a designer can restyle it later without touching its logic.
 
 | Role | Screens |
 |---|---|
-| `admin` | Overview, Collectors, Payouts, Collections, Treasury, Anomalies, Reconciliation, Ledger, Sessions, Rotations, Staff |
-| `hub_lead` | Overview, Collectors, Payouts, Collections |
+| `admin` | Daily work: overview, recipients, collections, cards, field app. Review: exceptions, payouts, hot wallet, anomalies, reconciliation, ledger. Programme setup: sessions, rates, rotations, staff. |
+| `hub_lead` | Overview, recipients, collections, cards, field app, exception review, payouts, hot wallet, aggregate live reconciliation. No staff/rate changes, anomaly verdicts or stuck-payment resolution. |
+| `supervisor` | Field PWA only: identify, material, weight, mandatory photo, review and offline save. Registration and card linking are online. No operator console or payout approval. |
 
 The nav filters by scope (`components/admin/AdminNav.tsx`), admin-only pages redirect a hub lead to the
 overview (`lib/auth/page-guard.ts`), and **every API call is still checked by the server**. Hiding a
@@ -47,5 +48,9 @@ button is a convenience, never the control.
 `e2e/field-story.spec.ts` runs the whole programme story in real browsers (session, enrolment,
 authorization, offline weigh, sync, approval, payout, verification picture, ledger). It drives the
 payout worker step through the same handler the worker process registers, because the harness does not
-start a second process. `e2e/treasury-vote.spec.ts` runs the funding vote with three admins.
+start a second process. `e2e/hot-wallet.spec.ts` checks the operational view and retired funding routes.
 `e2e/a11y.spec.ts` runs axe over the public pages, every console page and the supervisor pages.
+The full payment story requires `E2E_S3_ENDPOINT`, `E2E_S3_BUCKET`, `E2E_S3_REGION`,
+`E2E_S3_ACCESS_KEY_ID` and `E2E_S3_SECRET_ACCESS_KEY` for a dedicated disposable store. Without those
+it explicitly skips that story rather than pretending a missing mandatory photograph can pay.
+Never use production storage or database for e2e: global setup truncates test tables.

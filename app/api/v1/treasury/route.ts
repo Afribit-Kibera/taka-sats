@@ -11,13 +11,13 @@ import { NextResponse } from 'next/server';
 import { errorResponse } from '@/lib/api/errors';
 import { requireScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
-import { getTreasuryOverview } from '@/lib/treasury';
+import { getOperatingWallet } from '@/lib/treasury/operating';
 import { hotWallet } from '@/lib/treasury/provider';
 
 export async function GET(): Promise<NextResponse> {
   try {
     await requireScope('treasury:read');
-    return NextResponse.json(await getTreasuryOverview(getDb(), hotWallet));
+    return NextResponse.json(await getOperatingWallet(getDb(), hotWallet));
   } catch (error) {
     return errorResponse(error);
   }

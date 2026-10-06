@@ -39,7 +39,7 @@ describe('/api/v1/anomalies — auth (no DB)', () => {
     expect((await review(UNKNOWN, { outcome: 'dismissed' })).status).toBe(401);
   });
 
-  it.each(['supervisor', 'hub_lead', 'partner'])('403 for %s — admin only', async (role) => {
+  it.each(['supervisor', 'partner'])('403 for %s — admin only', async (role) => {
     authMock.mockResolvedValue(as('11111111-1111-4111-8111-111111111111', role));
     expect((await get()).status).toBe(403);
     expect((await review(UNKNOWN, { outcome: 'dismissed' })).status).toBe(403);
@@ -51,6 +51,11 @@ describe('/api/v1/anomalies — auth (no DB)', () => {
     expect((await get('?type=weird')).status).toBe(400);
     expect((await review(UNKNOWN, { outcome: 'maybe' })).status).toBe(400);
     expect((await review('nope', { outcome: 'dismissed' })).status).toBe(400);
+  });
+  it('hub leads may read anomaly evidence but may not submit a verdict', async () => {
+    authMock.mockResolvedValue(as('11111111-1111-4111-8111-111111111111', 'hub_lead'));
+    expect((await get('?status=weird')).status).toBe(400);
+    expect((await review(UNKNOWN, { outcome: 'dismissed' })).status).toBe(403);
   });
 });
 

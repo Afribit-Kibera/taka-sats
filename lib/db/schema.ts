@@ -44,6 +44,7 @@ export const collectors = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     alias: text('alias').notNull(),
+    recipientType: text('recipient_type').notNull().default('individual'),
     /** The current active tag id, if any. Denormalised copy of the latest tag_history row. */
     nfcTagId: text('nfc_tag_id').unique(),
     /** 'byo' | 'provisioned' (D-05/D-22). */
@@ -75,6 +76,10 @@ export const collectors = pgTable(
   (table) => [
     check('collectors_address_source_check', sql`${table.addressSource} in ('byo', 'provisioned')`),
     check('collectors_status_check', sql`${table.status} in ('pending', 'active', 'revoked')`),
+    check(
+      'collectors_recipient_type_check',
+      sql`${table.recipientType} in ('individual', 'collective')`,
+    ),
   ],
 );
 
@@ -429,6 +434,8 @@ export const collectionEvents = pgTable(
     scaleReadingRaw: text('scale_reading_raw'),
     /** Derived confidence, 'V0' manual … 'V4' audited (D-27). Independent of payout state. */
     verificationLevel: text('verification_level').notNull().default('V0'),
+    ocrWeightKg: numeric('ocr_weight_kg', { precision: 6, scale: 3 }),
+    evidenceStatus: text('evidence_status').notNull().default('manual'),
   },
   (table) => [
     check('collection_events_weight_check', sql`${table.weightKg} > 0`),
@@ -573,6 +580,11 @@ export const payouts = pgTable(
     status: text('status').notNull().default('awaiting_rate'),
     approvedBy: uuid('approved_by').references(() => supervisors.id),
     approvedAt: timestamp('approved_at', { withTimezone: true }),
+    reviewDecision: text('review_decision'),
+    reviewedBy: uuid('reviewed_by').references(() => supervisors.id),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewReason: text('review_reason'),
+    reviewRiskHash: text('review_risk_hash'),
     /** Which rail paid ('blink' | 'lnbits' | 'fedimint' | 'fake'). */
     provider: text('provider'),
     providerPaymentRef: text('provider_payment_ref'),

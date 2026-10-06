@@ -7,7 +7,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { type Role, type Scope, roleHasScope } from '@/lib/auth/permissions';
+import { type Role } from '@/lib/auth/permissions';
+import { consoleNavFor, NAV_GROUPS } from '@/lib/console/navigation';
 import { cn } from '@/lib/utils';
 
 /**
@@ -15,28 +16,12 @@ import { cn } from '@/lib/utils';
  * the API would let them use. Below the `md` breakpoint it collapses behind a Menu button
  * (a disclosure: aria-expanded + aria-controls), above it is a fixed left column.
  */
-const ITEMS: readonly { key: string; href: string; scope: Scope | null }[] = [
-  { key: 'overview', href: '/admin', scope: null },
-  { key: 'collectors', href: '/collectors', scope: 'collector:authorize' },
-  { key: 'payouts', href: '/payouts', scope: 'payout:read' },
-  { key: 'events', href: '/events', scope: 'collector:read' },
-  { key: 'treasury', href: '/treasury', scope: 'treasury:read' },
-  { key: 'anomalies', href: '/anomalies', scope: 'anomaly:review' },
-  { key: 'reconciliation', href: '/reconciliation', scope: 'report:generate:all' },
-  { key: 'ledger', href: '/ledger', scope: 'ledger:read' },
-  { key: 'sessions', href: '/sessions', scope: 'session:configure' },
-  { key: 'rates', href: '/rates', scope: 'session:configure' },
-  { key: 'rotations', href: '/rotations', scope: 'session:configure' },
-  { key: 'staff', href: '/staff', scope: 'session:configure' },
-  { key: 'fieldApp', href: '/enrol', scope: 'collector:enrol' },
-];
-
 export function AdminNav({ role }: { readonly role: Role }) {
   const t = useTranslations('Admin.nav');
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const items = ITEMS.filter((item) => item.scope === null || roleHasScope(role, item.scope));
+  const items = consoleNavFor(role);
 
   return (
     <div className="shrink-0 border-b border-border md:w-52 md:border-b-0 md:border-r">
@@ -58,32 +43,45 @@ export function AdminNav({ role }: { readonly role: Role }) {
         aria-label={t('label')}
         className={cn('px-3 pb-4 md:block md:py-6', open ? 'block' : 'hidden')}
       >
-        <ul id="admin-nav-list" className="space-y-1">
-          {items.map((item) => {
-            const active =
-              item.href === '/admin'
-                ? pathname === '/admin'
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        <div id="admin-nav-list" className="space-y-6">
+          {NAV_GROUPS.map((group) => {
+            const grouped = items.filter((item) => item.group === group);
+            if (!grouped.length) return null;
             return (
-              <li key={item.key}>
-                <Link
-                  href={item.href}
-                  aria-current={active ? 'page' : undefined}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    'block min-h-11 rounded-md px-3 py-2.5 font-display text-sm transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    active
-                      ? 'bg-accent font-bold text-accent-foreground'
-                      : 'text-foreground hover:bg-accent hover:text-accent-foreground',
-                  )}
-                >
-                  {t(item.key)}
-                </Link>
-              </li>
+              <section key={group} aria-label={t(group)}>
+                <h2 className="mb-2 px-3 font-display text-xs uppercase tracking-wider text-muted-foreground">
+                  {t(group)}
+                </h2>
+                <ul className="space-y-1">
+                  {grouped.map((item) => {
+                    const active =
+                      item.href === '/admin'
+                        ? pathname === '/admin'
+                        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    return (
+                      <li key={item.key}>
+                        <Link
+                          href={item.href}
+                          aria-current={active ? 'page' : undefined}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            'block min-h-11 rounded-md px-3 py-2.5 font-display text-sm transition-colors',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            active
+                              ? 'bg-accent font-bold text-accent-foreground'
+                              : 'text-foreground hover:bg-accent hover:text-accent-foreground',
+                          )}
+                        >
+                          {t(item.key)}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             );
           })}
-        </ul>
+        </div>
       </nav>
     </div>
   );

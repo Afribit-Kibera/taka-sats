@@ -222,6 +222,34 @@ export async function runReconciliation(
             tolerancePct: row.tolerancePct,
           },
         });
+        // Raise risk against the participating staff/hub session, never claw back recipient funds.
+        const affected = await tx
+          .selectDistinct({
+            supervisorId: collectionEvents.supervisorId,
+            sessionId: collectionEvents.sessionId,
+          })
+          .from(collectionEvents)
+          .where(
+            and(
+              eq(collectionEvents.material, row.material),
+              gte(collectionEvents.recordedAt, period.from),
+              lt(collectionEvents.recordedAt, period.to),
+            ),
+          );
+        for (const subject of affected) {
+          await raiseFlag(tx, {
+            type: 'mass_balance_variance',
+            supervisorId: subject.supervisorId,
+            ...(subject.sessionId ? { sessionId: subject.sessionId } : {}),
+            context: {
+              reportId: report.id,
+              material: row.material,
+              varianceKg: row.varianceKg,
+              variancePct: row.variancePct,
+              futureReviewRequired: true,
+            },
+          });
+        }
       }
       saved.push({ ...row, ...pick(report) });
     }

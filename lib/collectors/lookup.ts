@@ -8,6 +8,7 @@ import type { CollectorRecord, CollectorStatus, DestinationRecord } from './type
 const SUMMARY = {
   id: collectors.id,
   alias: collectors.alias,
+  recipientType: collectors.recipientType,
   publicCode: collectors.publicCode,
   nfcTagId: collectors.nfcTagId,
   status: collectors.status,
@@ -29,7 +30,7 @@ export async function findCollectorByCode(
 /** A compact projection for lookup, search and the offline cache (§7.1, G2, M1-8). */
 export type CollectorSummary = Pick<
   CollectorRecord,
-  'id' | 'alias' | 'publicCode' | 'nfcTagId' | 'status'
+  'id' | 'alias' | 'recipientType' | 'publicCode' | 'nfcTagId' | 'status'
 >;
 
 export type CollectorSearch = {

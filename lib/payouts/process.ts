@@ -50,7 +50,10 @@ import {
   type PayoutAmounts,
 } from '@/lib/money';
 import { requireFreshRate, StaleRateError } from '@/lib/money/rates';
+import { photoUrlFor } from '@/lib/storage';
+import { ensureEvidence } from '@/lib/verification/evidence';
 import { PayoutApprovalError, PayoutNotFoundError, PayoutStateError } from './errors';
+import { assessPayoutRisk } from './risk';
 
 export type PayoutRecord = typeof payouts.$inferSelect;
 
@@ -271,7 +274,14 @@ export async function processPayout(
   now: Date = new Date(),
 ): Promise<PayoutRecord> {
   const before = await requirePayout(db, payoutId);
-  const after = await evaluate(db, provider, before, now);
+  if (
+    getSettings().payouts.approval_mode === 'risk_based' &&
+    (EVALUABLE as readonly string[]).includes(before.status)
+  ) {
+    await ensureEvidence(db, before.collectionEventId);
+  }
+  const current = await requirePayout(db, payoutId);
+  const after = await evaluate(db, provider, current, now);
   if (after.status !== before.status || after.lastError !== before.lastError) {
     logOutcome(after);
   }
@@ -294,13 +304,23 @@ async function evaluate(
   if (!(EVALUABLE as readonly string[]).includes(payout.status)) {
     return payout;
   }
+  if (payout.reviewDecision === 'rejected' || payout.reviewDecision === 'reweigh') {
+    return payout;
+  }
+
+  // A stale evaluator must not overwrite a review or claim after a reviewer vetoes it.
+  const sameReview = and(
+    sql`${payouts.reviewedAt} is not distinct from ${payout.reviewedAt?.toISOString() ?? null}::timestamptz`,
+    sql`${payouts.approvedBy} is not distinct from ${payout.approvedBy}::uuid`,
+    sql`${payouts.reviewRiskHash} is not distinct from ${payout.reviewRiskHash}`,
+  );
 
   /** Apply a transition — only while the payout is still evaluable (loses cleanly to a concurrent caller). */
   const move = async (patch: PayoutPatch): Promise<PayoutRecord> => {
     const [row] = await db
       .update(payouts)
       .set(patch)
-      .where(and(eq(payouts.id, payout.id), inArray(payouts.status, [...EVALUABLE])))
+      .where(and(eq(payouts.id, payout.id), inArray(payouts.status, [...EVALUABLE]), sameReview))
       .returning();
     return row ?? requirePayout(db, payout.id);
   };
@@ -329,12 +349,22 @@ async function evaluate(
       recorder: collectionEvents.supervisorId,
       weightKg: collectionEvents.weightKg,
       rateFiatMinor: materialRates.rateFiatMinor,
+      photoSha256: collectionEvents.photoSha256,
     })
     .from(collectionEvents)
     .innerJoin(materialRates, eq(materialRates.id, collectionEvents.rateId))
     .where(eq(collectionEvents.id, payout.collectionEventId));
   if (!event) {
     throw new PayoutNotFoundError(`collection event ${payout.collectionEventId}`);
+  }
+  // The offline event may arrive before its photo. Keep it safe and sweep it again later;
+  // neither an approval nor legacy policy can turn a missing photograph into payable work.
+  try {
+    if (!(await photoUrlFor(event.photoSha256))) {
+      return move({ status: 'awaiting_rate', lastError: 'photo_missing' });
+    }
+  } catch {
+    return move({ status: 'awaiting_rate', lastError: 'photo_unavailable' });
   }
   let snapshot: Awaited<ReturnType<typeof requireFreshRate>>;
   try {
@@ -373,14 +403,34 @@ async function evaluate(
 
   // (d) Approval. An approval is bound to the destination it was given for: if the
   // destination has since changed, it no longer counts and a new approval is needed.
-  const approvedForThis = payout.approvedBy !== null && payout.destinationId === destination.id;
-  if (!approvedForThis && (await needsApproval(db, amounts.sats, destination.id))) {
+  const riskBased = getSettings().payouts.approval_mode === 'risk_based';
+  const risk = riskBased ? await assessPayoutRisk(db, { ...payout, ...priced }) : null;
+  if (risk?.reasons.includes('photo_hash_mismatch')) {
+    return move({ status: 'failed', ...priced, lastError: 'photo_hash_mismatch' });
+  }
+  const approvedForThis =
+    payout.approvedBy !== null &&
+    payout.destinationId === destination.id &&
+    (!riskBased || (payout.reviewDecision === 'approved' && payout.reviewRiskHash === risk?.hash));
+  const reviewRequired = riskBased
+    ? Boolean(risk?.reasons.length)
+    : await needsApproval(db, amounts.sats, destination.id);
+  if (!approvedForThis && reviewRequired) {
     return move({
       status: 'pending_approval',
       ...priced,
       approvedBy: null,
       approvedAt: null,
-      lastError: null,
+      ...(riskBased
+        ? {
+            reviewDecision: null,
+            reviewedBy: null,
+            reviewedAt: null,
+            reviewRiskHash: null,
+            reviewReason: null,
+          }
+        : {}),
+      lastError: risk?.reasons[0] ?? null,
     });
   }
 
@@ -395,6 +445,31 @@ async function evaluate(
     return move({ status: 'pending_float', ...priced, lastError: 'insufficient_float' });
   }
 
+  // A provider balance request can take seconds. Recheck evidence/flags and wallet after it,
+  // so an approval or risk snapshot cannot silently survive changes during that network call.
+  if (risk) {
+    const latestDestination = await getLiveDestination(db, payout.collectorId);
+    const latestRisk = await assessPayoutRisk(db, { ...payout, ...priced });
+    if (
+      latestDestination?.id !== destination.id ||
+      latestDestination.status !== 'verified' ||
+      latestRisk.hash !== risk.hash
+    ) {
+      return move({
+        status: 'pending_approval',
+        ...priced,
+        approvedBy: null,
+        approvedAt: null,
+        reviewDecision: null,
+        reviewedBy: null,
+        reviewedAt: null,
+        reviewRiskHash: null,
+        reviewReason: null,
+        lastError: 'risk_changed',
+      });
+    }
+  }
+
   // (f) Claim, THEN send. The conditional UPDATE is the lock: only one caller gets the row.
   const [claimed] = await db
     .update(payouts)
@@ -406,7 +481,7 @@ async function evaluate(
       attempts: sql`${payouts.attempts} + 1`,
       lastError: null,
     })
-    .where(and(eq(payouts.id, payout.id), inArray(payouts.status, [...EVALUABLE])))
+    .where(and(eq(payouts.id, payout.id), inArray(payouts.status, [...EVALUABLE]), sameReview))
     .returning();
   if (!claimed) {
     return requirePayout(db, payout.id);
@@ -510,11 +585,21 @@ export async function approvePayout(
     readonly actor: { readonly id: string; readonly role: Role };
   },
 ): Promise<{ readonly payout: PayoutRecord; readonly changed: boolean }> {
+  if (getSettings().payouts.approval_mode === 'risk_based') {
+    const { reviewPayout } = await import('./review');
+    return reviewPayout(db, { ...input, decision: 'approved', reason: 'legacy_api_approval' });
+  }
   const { payoutId, actor } = input;
   if (!roleHasScope(actor.role, 'payout:approve')) {
     throw new PayoutApprovalError('not_permitted');
   }
   const payout = await requirePayout(db, payoutId);
+  if (payout.reviewDecision === 'rejected' || payout.reviewDecision === 'reweigh') {
+    throw new PayoutStateError(
+      payout.status,
+      'retry reviewed collection; record new evidence instead',
+    );
+  }
 
   const [event] = await db
     .select({ recorder: collectionEvents.supervisorId })
@@ -564,6 +649,9 @@ export async function retryPayout(
   payoutId: string,
 ): Promise<{ readonly payout: PayoutRecord; readonly changed: boolean }> {
   const payout = await requirePayout(db, payoutId);
+  if (payout.reviewDecision === 'rejected' || payout.reviewDecision === 'reweigh') {
+    throw new PayoutStateError(payout.status, 'retry rejected evidence; record a new collection');
+  }
   if (payout.status === 'queued') {
     return { payout, changed: false };
   }
@@ -573,7 +661,13 @@ export async function retryPayout(
   const [queued] = await db
     .update(payouts)
     .set({ status: 'queued', lastError: null })
-    .where(and(eq(payouts.id, payout.id), eq(payouts.status, 'failed')))
+    .where(
+      and(
+        eq(payouts.id, payout.id),
+        eq(payouts.status, 'failed'),
+        sql`coalesce(${payouts.reviewDecision}, '') not in ('rejected', 'reweigh')`,
+      ),
+    )
     .returning();
   if (queued) {
     return { payout: queued, changed: true };

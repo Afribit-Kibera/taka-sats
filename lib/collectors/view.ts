@@ -15,6 +15,7 @@ import type { CollectorActor, CollectorRecord, DestinationRecord } from './types
 export type CollectorView = {
   readonly id: string;
   readonly alias: string;
+  readonly recipientType: 'individual' | 'collective';
   readonly publicCode: string;
   /** `pending` (awaiting authorization) | `active` (authorized) | `revoked`. */
   readonly status: CollectorRecord['status'];
@@ -62,6 +63,7 @@ export function toCollectorView(
   return {
     id: row.id,
     alias: row.alias,
+    recipientType: row.recipientType as 'individual' | 'collective',
     publicCode: row.publicCode,
     status: row.status as CollectorRecord['status'],
     reference: {

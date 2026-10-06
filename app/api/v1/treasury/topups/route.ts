@@ -17,29 +17,14 @@ import { z } from 'zod';
 import { errorResponse } from '@/lib/api/errors';
 import { requireScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
-import {
-  getTopupView,
-  listTopups,
-  proposeTopup,
-  TOPUP_PAGE_DEFAULT,
-  TOPUP_PAGE_MAX,
-  TOPUP_STATUSES,
-} from '@/lib/treasury';
-import { hotWallet } from '@/lib/treasury/provider';
+import { listTopups, TOPUP_PAGE_DEFAULT, TOPUP_PAGE_MAX, TOPUP_STATUSES } from '@/lib/treasury';
+import { treasuryWorkflowRemoved } from '@/lib/treasury/removed';
 
 const querySchema = z.object({
   status: z.enum(TOPUP_STATUSES).optional(),
   cursor: z.string().min(1).max(500).optional(),
   limit: z.coerce.number().int().min(1).max(TOPUP_PAGE_MAX).default(TOPUP_PAGE_DEFAULT),
 });
-
-const bodySchema = z
-  .object({
-    id: z.uuid().optional(),
-    amountSats: z.number().int().positive(),
-    note: z.string().trim().max(500).optional(),
-  })
-  .strict();
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -55,22 +40,4 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    const actor = await requireScope('treasury:propose');
-    const body = bodySchema.parse(await request.json().catch(() => null));
-    const db = getDb();
-    const { topup, changed } = await proposeTopup(db, hotWallet, {
-      id: body.id,
-      amountSats: body.amountSats,
-      note: body.note,
-      actor: { id: actor.id, role: actor.role },
-    });
-    return NextResponse.json(
-      { topup: await getTopupView(db, topup.id), changed },
-      { status: changed ? 201 : 200 },
-    );
-  } catch (error) {
-    return errorResponse(error);
-  }
-}
+export const POST = treasuryWorkflowRemoved;

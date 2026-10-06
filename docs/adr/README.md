@@ -32,3 +32,4 @@ ADR differ, REQUIREMENTS is authoritative.
 | [0018](0018-payment-destinations-and-spend-credentials.md) | Payment destinations are records; spend credentials are never accepted | Accepted | D-26 |
 | [0019](0019-weight-provenance-and-derived-verification.md) | Weight provenance is signed at capture; verification is derived | Accepted | D-27 |
 | [0020](0020-multisig-pool-funds-a-pluggable-hot-wallet.md) | A multisig pool funds a capped, pluggable hot wallet | Accepted | D-28 |
+| [0021](0021-field-first-risk-based-payments.md) | Field-first recipients, risk-based payment and external treasury | Accepted | Supersedes the in-app workflow of ADR-0020 |

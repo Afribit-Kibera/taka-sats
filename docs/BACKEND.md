@@ -5,7 +5,7 @@ console, public pages). **Source of truth:** the code; this file is its map. If 
 code is right and this file is stale. Fix it in the same change: updating this file is part of
 the definition of done for any API change.
 
-**Last updated:** 2026-10-01 · **Status key:** ✅ built and tested · 🚧 being built · 📋 planned
+**Last updated:** 2026-10-06 · **Status key:** ✅ built and tested · 🚧 being built · 📋 planned
 
 - [1. Orientation](#1-orientation) · [2. Roles and scopes](#2-roles-and-scopes) · [3. The domain in one page](#3-the-domain-in-one-page)
 - [4. Offline contract](#4-offline-contract) · [5. Endpoint reference](#5-endpoint-reference) · [6. Things that happen in the background](#6-things-that-happen-in-the-background)
@@ -70,6 +70,7 @@ matches the class. **Switch on `code`, never on `message`** (the message is Engl
 | 409 | `review_final` | the same admin tried to change their own anomaly verdict (§5.9) |
 | 409 | `invalid_state` | the action does not apply to the payout's (or treasury proposal's) current status; `details.status` says what it is |
 | 410 | `tag_revoked` | a revoked tag was tapped (the attempt is logged server-side) |
+| 410 | `feature_removed` | authenticated legacy funding mutation; use external programme funding |
 | 413 / 415 | `payload_too_large` / `unsupported_media_type` | photo upload limits - only JPEG, PNG, WebP and HEIC are accepted (**never SVG**) |
 | 422 | `spend_credential_rejected` | **a wallet card's Pay QR was scanned** - show "flip the card, scan Receive" (§3.2) |
 | 422 | `not_receive_capable` | a withdraw (LNURL-w) code, or anything that cannot receive |
@@ -111,9 +112,10 @@ Source: `lib/auth/permissions.ts` (the matrix test `lib/auth/rbac-matrix.test.ts
 | **`payout:resolve`**: check and resolve a payout stuck in `sending` | | | ✅ | |
 | `ledger:read` - stream the ledger, checkpoints, verify | | | ✅ | |
 | `reconciliation:write` - enter recycler sales, run reconciliation reports | | | ✅ | |
-| `report:generate:all` - read reconciliation reports and recycler sales | | | ✅ | |
+| `reconciliation:read` - live aggregate mass balance | | ✅ | ✅ | |
+| `report:generate:all` - saved reconciliation reports and recycler sales | | | ✅ | |
 | `anomaly:review` - the anomaly queue and verdicts | | | ✅ | |
-| **`treasury:read`**: the treasury view and funding proposals | | | ✅ | |
+| **`treasury:read`**: operating wallet and historical funding records | | ✅ | ✅ | |
 | **`treasury:propose`**: propose a pool→hot-wallet refill, cancel your own proposal, record the transfer reference | | | ✅ | |
 | **`treasury:approve`**: approve or reject a refill proposed by someone else, check that the funds arrived | | | ✅ | |
 | `treasury:topup:initiate`: read the hot-wallet float (`GET /treasury/float`) | | | ✅ | |
@@ -122,9 +124,9 @@ Source: `lib/auth/permissions.ts` (the matrix test `lib/auth/rbac-matrix.test.ts
 `payout:execute` exists in **no** role - paying is a system function. There is no endpoint that
 executes a payout and none will be added.
 
-The treasury scopes are **admin only**. `hub_lead` (a field-side role that authorizes collectors and
-approves payouts) deliberately holds none of them, so nobody who vets collectors also approves the
-money that pays them (ADR-0020). Treasury stewards should be separate people from those who record weights.
+Funding governance is external. Legacy `treasury:propose/approve` grants remain dormant for compatibility;
+all funding mutation routes return 410. Hub leads can read operating float but cannot execute a payment,
+run governance, change staff/rates, resolve uncertain payments or submit anomaly verdicts.
 
 A plain **`supervisor` may act only inside an active session they are assigned to** (`403
 no_active_session` otherwise); `hub_lead` and `admin` are not shift-bound.
@@ -134,6 +136,10 @@ no_active_session` otherwise); `hub_lead` and `admin` are not shift-bound.
 ## 3. The domain in one page
 
 ### 3.1 A collector - three states, one gate
+
+Recipients use the existing collector identity/table. `recipientType` is `individual` (default)
+or `collective`. A collective has one registered wallet and one payout per collection, never per-member
+splits. The same authorization, destination, offline lookup and evidence rules apply to both.
 
 ```
 register ──► pending ──authorize──► active ◄──authorize── revoked
@@ -263,10 +269,17 @@ recorded**. No request field anywhere carries a destination or an address; the w
 | `paid` | done - `providerPaymentRef` (the payment hash) and `settledAt` are the proof | - | show the proof |
 | `failed` | not paid | `collector_not_authorized`, `amount_not_payable`, `payment_failed`, `destination_rejected`, `resolved_failed` (an admin confirmed nothing was sent) | staff may **Retry** - confirm with the provider first |
 
-- **Pilot mode:** with `payouts.second_signoff_threshold_sats = 0` *every* payout stops at `pending_approval`, so the
-  approval queue is the main admin screen. By default the **first payout to any new wallet always needs approval**
-  (`payouts.require_approval_first_payout`). Approval is bound to the wallet: if the wallet changes after approval, the
-  approval is voided and the payout asks again.
+- **Risk-based mode (default):** a stored photograph, active recipient, verified server-resolved wallet,
+  valid assigned session and fresh pricing are required. The worker completes anomaly checks before assessing
+  payment. With required OCR, a confident matching display is needed for auto-payment. Duplicate photos,
+  outside/missing GPS in a bounded session, weight outliers/mismatches, unresolved flags, missing verification
+  and fiat value strictly above `review_threshold_fiat_minor` request a distinct hub lead/admin review.
+  Review approves, rejects or requests reweighing, with a required reason; no arbitrary address or amount.
+  New evidence, flags or destination invalidate approval. Detector failures cannot auto-pay.
+- **Legacy mode:** explicitly set `payouts.approval_mode = "legacy"` for the old sats threshold/first-wallet
+  policy. Threshold 0 holds all positive payouts only in this mode; it does NOT configure risk-based review.
+  Both modes wait for a stored photo. Rejected/reweigh decisions are terminal: record new collection evidence,
+  never retry the vetoed payout. `sending`/unknown outcomes remain protected from automatic resend.
 - `amountSats` / `amountFiatMinor` are `null` until the payout has been priced (integers; KES cents).
 - After approval the payout is re-priced at a fresh rate, so the sats can differ slightly from what the approver saw.
 - A payout in **`sending` for longer than `payouts.sending_stale_minutes`** is never retried automatically - it may have
@@ -396,7 +409,9 @@ Plus `requireActiveSession` for a plain supervisor.
                                                    "authorizedBy": null, "authorizedAt": null } }
 ```
 
-Only `alias` is required. `siteCode` (2-6 letters) is optional; falls back to `collectors.default_site_code`.
+Only `alias` is required. `recipientType` is optional (`individual` or `collective`, default `individual`)
+and is returned on enrolment, collector views/search/lookup and bootstrap. `siteCode` (2-6 letters) is
+optional; falls back to `collectors.default_site_code`.
 Resending the same `id` returns the original row (and the same code).
 
 #### `GET /collectors` - search / queue · scope `collector:read`
@@ -504,7 +519,10 @@ Newest first; pass `nextCursor` back as `cursor`. A supervisor only ever gets pa
   "nextCursor": null }
 ```
 
-`openFlags` = unreviewed anomaly flags on the payout's event (§5.9) - warn the approver; a flag never blocks.
+`openFlags` counts unreviewed event flags. In risk-based mode unresolved/confirmed risk flags require review.
+Payout views also include `recipientType`, `reviewDecision` (`null|approved|rejected|reweigh`),
+`reviewedBy`, `reviewedAt` and `reviewReason`. The binding hash stays server-side. `lastError` gives a current reason; the event
+detail exposes its photo, display reading and flags. No client may set these derived fields.
 There is **no address field**. Errors: `400 invalid_request` (bad filter), `400 invalid_cursor`.
 
 #### `GET /payouts/:id` · scope `payout:read`
@@ -515,8 +533,21 @@ There is **no address field**. Errors: `400 invalid_request` (bad filter), `400 
 - `totalSats` sums priced payouts only. A supervisor's numbers cover only their own events.
 
 #### `POST /payouts/:id/approve` · scope `payout:approve` (hub_lead, admin) - no body
+Legacy compatibility: in risk-based mode this delegates to review with the recorded reason `legacy_api_approval`.
+New UI must use the explicit review endpoint below.
 `200 { "payout": { … }, "changed": true }` · `403 self_approval` (you recorded this collection) · `403 forbidden` ·
 `404 not_found` · `409 invalid_state` (not awaiting approval; `details.status`). Idempotent (`changed: false`).
+
+#### `POST /payouts/:id/review` · scope `payout:approve` (hub_lead, admin)
+
+Body `{ "decision": "approved" | "rejected" | "reweigh", "reason": "nonempty, max 1000 chars" }`.
+Strict schema rejects amount, destination and other extra fields. Returns `{ payout, changed }`.
+`403 self_approval` for the recorder, `403 forbidden` for insufficient scope, `404 not_found`,
+`409 invalid_state` unless waiting for review. A repeated final decision is idempotent; a different
+decision is not an edit. An approval re-checks storage, risks and the destination-bound snapshot, queues
+the worker and appends a ledger correction. Rejected/reweigh work is terminal `failed`; its facts stay intact.
+Approval cannot override a photo fingerprint mismatch. Rate/destination/evidence/risk/float are rechecked
+by the worker, so review is not a direct payment.
 
 #### `POST /payouts/:id/retry` · scope `payout:approve` - no body
 `failed → queued`. `200 { payout, changed }` · `409 invalid_state` for any other status. **Check the wallet first:**
@@ -552,80 +583,36 @@ UI: on a `sending` payout with `lastError: "outcome_unknown"`, show **Check with
 `200 { "available": 482000, "asOf": "…", "lowBalance": false }` · `503 float_unavailable` (the rail is unreachable; no
 detail is leaked). `lowBalance` is true below `payouts.float_low_balance_alert_sats`.
 
-#### 5.3.1 The treasury funding vote ✅ (admin only)
+#### 5.3.1 Operating hot wallet (external funding)
 
-How the programme's pool refills the capped hot wallet (`docs/TREASURY.md`, ADR-0020). **Taka Sats only
-records the vote.** The transfer is signed in the pool's own wallet; there is no endpoint that moves pool
-funds and no field that carries a key, a seed or an address. Every state change below appends a
-`treasury_topup` entry to the ledger chain, in the same transaction.
-
-```
- proposed ──(N distinct approvers, never the proposer)──► approved ──(txid recorded)──► transferred ──(float rose)──► confirmed
-    │                                                         │
-    └──────────────── rejected | cancelled ◄──────────────────┘   (only before a transfer is recorded)
-```
-
-| status | meaning | UI |
-|---|---|---|
-| `proposed` | open for approval | Approve / Reject (not for the proposer), Cancel (proposer only) |
-| `approved` | `approvalsRequired` distinct stewards approved | "Sign the transfer in the pool wallet", then **record its txid** |
-| `transferred` | the txid is recorded, the funds are not yet seen | wait; **Check arrival** (the worker also checks every `payouts.sweep_cron`) |
-| `confirmed` | the hot-wallet balance showed the funds; waiting payouts were woken | done |
-| `rejected` / `cancelled` | the vote ended without a transfer | done |
-
-**`TopupView`** (every action returns `{ topup, changed }`; `changed: false` = it was already so, nothing written):
+**`GET /hot-wallet`** and **`GET /treasury`** (compatibility alias) · scope `treasury:read`
+(admin and hub lead). Read only:
 
 ```json
-{ "id": "…", "status": "approved", "amountSats": 50000, "note": "two weeks of payouts",
-  "createdAt": "…", "approvalsRequired": 2,
-  "proposedBy": { "id": "…", "name": "Wanjiru" },
-  "approvals": [ { "by": { "id": "…", "name": "Otieno" }, "at": "…" } ],
-  "floatBaselineSats": 4200,                 // hot-wallet float when the quorum was reached; null if it could not be read
-  "transfer": { "reference": "abc123…", "by": { "id": "…", "name": "…" }, "at": "…" },   // or null
-  "outcome": { "at": "…", "by": { "id": "…", "name": "…" } /* null = confirmed by the worker */, "reason": null } }  // or null
+{
+  "hotWallet": { "available": 5000, "asOf": "…", "lowBalance": false, "error": null },
+  "pendingPayouts": { "count": 3, "totalSats": 3000, "unpricedCount": 1 },
+  "estimatedRequiredFloatSats": 3000,
+  "availableAfterQueueSats": 2000,
+  "lowBalanceThresholdSats": 1000,
+  "insufficientFunds": false,
+  "fundingManagedExternally": true,
+  "approvalMode": "risk_based"
+}
 ```
 
-**`GET /treasury`** · scope `treasury:read`: one payload for the treasury panel:
+Queue estimates include waiting/review/sending payouts and are priced lower bounds, not reservations or
+guarantees. `unpricedCount` warns that more funds may be needed. A failed provider balance read returns
+`available/asOf/lowBalance/availableAfterQueueSats/insufficientFunds: null` with `error: "float_unavailable"`,
+never a fabricated zero.
 
-```json
-{ "hotWallet": { "available": 482000, "asOf": "…", "lowBalance": false, "error": null },
-  "cap": { "sats": 1000000, "headroomSats": 440000 },          // both null when no cap is set
-  "approvalsRequired": 2,
-  "inFlightSats": 78000,                                        // proposed + approved + transferred (counts against the cap)
-  "pendingTopups": [ …TopupView… ],                             // not yet confirmed, rejected or cancelled
-  "pendingPayouts": { "count": 3, "totalSats": 3100 },          // payouts waiting in pending_float
-  "pool": { "configured": false, "balanceSats": null } }        // a read-only pool balance is not built: show "not configured", never 0
-```
-
-If the hot wallet cannot be read the call is still `200`, with `hotWallet: { available: null, asOf: null, lowBalance: null, error: "float_unavailable" }` and `cap.headroomSats: null`.
-
-**`GET /treasury/topups`** · scope `treasury:read`: newest first. Query `status`, `cursor` (the previous `nextCursor`), `limit` 1-100 (default 50). `{ "topups": [ …TopupView… ], "nextCursor": … }`.
-**`GET /treasury/topups/:id`** · `treasury:read`: `{ "topup": TopupView }`, `404 not_found`.
-
-**`POST /treasury/topups`** · scope `treasury:propose`: `{ "id"?: uuid, "amountSats": 50000, "note"?: "≤ 500 chars" }` → `201 { topup, changed: true }`.
-
-- `amountSats` must be a positive whole number (`400 invalid_request` otherwise: 0, negative, fractional, a string, an extra field).
-- `id` is an optional client UUID: resending the same proposal returns `200 { changed: false }`; the same `id` with a different amount or proposer is `409 conflict`.
-- `422 hot_wallet_cap_exceeded` when `float + inFlightSats + amountSats > cap` (only when `treasury.hot_wallet_cap_sats > 0`); `503 float_unavailable` when a cap is set and the float cannot be read. Nothing is guessed.
-
-**`POST /treasury/topups/:id/signoff`** · scope `treasury:approve`: no body. Records the caller's approval.
-`403 self_approval` for the proposer · `409 invalid_state` for a cancelled, rejected or already-approved proposal ·
-a resend by the same steward is `200 { changed: false }` and counts once. The approval that completes the quorum
-moves the status to `approved` and notes the hot-wallet float (the baseline arrival is judged against).
-
-**`POST /treasury/topups/:id/transfer`** · scope `treasury:propose`: `{ "reference": "<txid or other reference>" }` (1-200 printable characters,
-no spaces; stored lower-case). Only on an `approved` proposal (`409 invalid_state` otherwise). The same reference again is
-`200 { changed: false }`; a different reference on the same proposal, or one already used by another proposal, is `409 conflict`.
-`503 float_unavailable` if no baseline was taken at quorum and the float cannot be read now.
-
-**`POST /treasury/topups/:id/confirm`** · scope `treasury:approve`: no body. Checks the hot-wallet balance:
-`200 { topup, changed, arrived }`. `arrived: false` is **not** an error (the funds have not shown up; nothing changed). The proposal is
-confirmed only when `float + sats paid out since the baseline ≥ baseline + amount`; a person's say-so is never enough. On confirmation
-the payouts parked in `pending_float` are woken at once. `409 invalid_state` unless `transferred`; `503 float_unavailable`.
-
-**`POST /treasury/topups/:id/cancel`** · scope `treasury:propose`: optional `{ "reason" }`. The proposer withdraws their own proposal (`403` for anyone else). Only before a transfer is recorded.
-**`POST /treasury/topups/:id/reject`** · scope `treasury:approve`: optional `{ "reason" }`. Another steward refuses it (a single veto; `403 self_approval` for the proposer). Only before a transfer is recorded.
-Both are idempotent and return `409 invalid_state` once a transfer is recorded or the vote has otherwise ended.
+Treasury governance belongs outside Taka Sats. Fund the operating wallet in the programme's own wallet
+workflow; the normal payout sweep notices available funds and resumes `pending_float` work. The
+`confirm-treasury-topups` job is unscheduled. All legacy funding POST routes (`/treasury/topups`,
+`/:id/signoff|transfer|confirm|cancel|reject`) return **410 `feature_removed`** after authentication
+and `treasury:read` authorization (401/403 still apply). They cannot mutate history. Historical topup
+GET routes remain available to authorized staff; old ledger rows/tables are preserved. No new topup
+proposal or transfer UI exists. `/treasury` redirects to `/hot-wallet`.
 
 ### 5.4 Ledger ✅ (admin only)
 
@@ -745,7 +732,7 @@ after an event is confirmed, so a flag may appear a moment after the event.
 | `mass_balance_variance` | a reconciliation run found a material over tolerance | `{ reportId, material, periodStart, periodEnd, collectedKg, recyclerKg, varianceKg, variancePct, tolerancePct }` |
 | `revoked_tag_tap`, `payout_uncertain` | older flags (a revoked tag was tapped; a payout's outcome is unknown) | `{ tagId }` / `{ payoutId, reason }` |
 
-#### `GET /anomalies` · scope `anomaly:review`
+#### `GET /anomalies` · scope `anomaly:review` or `payout:approve` (admin/hub lead read)
 
 Query: `status=open|confirmed|dismissed|all` (default `open`), `type`, `eventId`, `cursor`, `limit` (≤ 100).
 
@@ -802,7 +789,7 @@ the receipt photo with `POST /photos` first and send its `receiptSha256`. Resend
 #### `GET /recycler-sales` · scope `report:generate:all`
 `?cursor=&limit=` → `{ "sales": [ …as above… ], "nextCursor": … }`, newest `soldAt` first.
 
-#### `GET /reconciliation?from=&to=&material=` · scope `report:generate:all`
+#### `GET /reconciliation?from=&to=&material=` · scope `reconciliation:read` (admin/hub lead)
 
 Computed live for `[from, to)`; nothing is saved. `from` and `to` are required.
 
@@ -868,7 +855,8 @@ The **worker** (`pnpm worker`, pg-boss) runs these; the UI never calls them, but
 | anomaly detectors (inline, right after a sync confirms an event) | new flags in `GET /anomalies`; `openFlags` on events and payouts (§5.8, §5.9) |
 | `provision-collector-wallet` | custodial path only (off by default, gate G1) |
 | `process-payout` / `sweep-payouts` | a payout moves through its states (§3.5); the sweep (every 5 min) resumes anything parked - a stale rate, a missing wallet, a low float |
-| `confirm-treasury-topups` | a `transferred` funding proposal becomes `confirmed` once the hot-wallet balance shows the funds (same cadence as the sweep); waiting payouts are then woken (§5.3.1) |
+| scale evidence (inside `process-payout`) | private photo hash + Mistral display comparison; stores derived `evidenceStatus`/`ocrWeightKg`, appends a correction; never changes signed weight or claims complete V1 verification |
+| `confirm-treasury-topups` | retired and unscheduled; funding is external |
 
 ---
 
@@ -896,13 +884,28 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 | `programme.public_base_url` | base of `reference.url` |
 | `programme.fiat_currency`, `locales`, `default_locale` | currency and language options |
 | `lightning.provider_hints` | which wallet labels exist |
-| `treasury.topup_approvals_required` / `treasury.hot_wallet_cap_sats` | the same values arrive on `GET /treasury` (`approvalsRequired`, `cap`); read them there, not from `/meta` |
+| `payouts.approval_mode` / `review_threshold_fiat_minor` | `/meta.payouts.approvalMode` and `.reviewThresholdFiatMinor`; legacy policy must be explicitly selected |
+| `verification.provider` / `model` / `ocr_required_for_autopay` | `/meta.verification.provider`, `.model` (null for none), `.ocrRequiredForAutopay`; no API key is exposed |
 
 ---
 
 ## 8. Changelog for the frontend
 
 Newest first. Anything here may need a UI change.
+
+**2026-10-06: field-first recipients, evidence and operational wallet**
+- Migration 0013 adds recipient type, derived evidence fields and immutable-review audit metadata without
+  altering old signed payloads, IDs or ledger entries. Bootstrap caches recipient type for offline lookup.
+- New `POST /payouts/:id/review`, `GET /hot-wallet`; `/treasury` API becomes operating-wallet alias.
+  Funding POST routes return authenticated 410 `feature_removed`; historical GETs remain and the vote job stops.
+- Risk-based policy replaces universal approval by default. Scale OCR through OpenRouter/Mistral is
+  configurable and fails to review on malformed, low-confidence, unsupported-unit or unreadable evidence.
+  New event fields: `evidenceStatus` (`pending|manual|matched|mismatch|unreadable|invalid`), `ocrWeightKg`.
+  `/events/:id` includes these via the event view; the UI shows comparison separately from verification level.
+- Hub leads gain operating-wallet and live reconciliation read; anomaly list is readable with payout approval
+  scope but anomaly verdicts remain admin-only. New `/meta.verification` and `/meta.payouts` facts above.
+- NFC carries `takasats:<publicCode>` plus the canonical identity URL only. Blank writes are verified before
+  linking; cards never store wallets, payment authorization or secrets.
 
 **2026-10-02 (events): one event with its verification checks**
 - **New endpoint:** `GET /events/:id` (§5.8) returns the event plus `checks`, `flags`, `rate`, `session`, `supervisor`, `ledger`
@@ -1024,9 +1027,12 @@ Newest first. Anything here may need a UI change.
 6. Scale-photo capture guidance (waste + scale + display in frame) for the verification slice.
 7. ~~A public `/c/<code>` landing page~~ (built: it reveals nothing).
 
-**Known gaps (backend):** a read-only balance view of the multisig pool (📋; `GET /treasury` reports `pool.configured: false`), OCR/AI verification of the scale
-photo (📋), Nostr/OpenTimestamps anchoring (📋), a scheduled (periodic) reconciliation run and hub_lead read access to reconciliation (📋), a minimum-n suppression on the public summary (📋). The real Blink/LNbits `pay()` has never been exercised against a
-live account - `docs/PILOT.md §6` makes the first real payment a deliberate, tiny, supervised step.
+**Known gaps:** offline registration, material classification/full V1 verification, NFC testing on actual
+hardware, representative scale-photo calibration, scheduled reconciliation, small-n public suppression
+and external ledger anchoring remain. Treasury governance is intentionally external. Live mass-balance
+read now supports hub leads. Blink has a documented supervised 1-sat live test in `docs/providers/blink.md`.
+Repeat supervised validation for new credentials/providers. `pilot:smoke` refuses live write-based testing
+without the owner's explicit `--pay-real` opt-in because syncing work can now pay automatically.
 
 **Decisions this contract rests on:** D-24 cardless identity · D-25 authorization gate · D-26 payment
 destinations · D-27 weight provenance - `docs/REQUIREMENTS.md §2`, `docs/adr/0017..0019`.

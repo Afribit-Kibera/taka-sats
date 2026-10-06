@@ -15,7 +15,7 @@ export type NewFlag = {
 /**
  * Write one flag for review. Returns `false` when it already exists — for an event-bound flag
  * the partial unique index on `(flag_type, collection_event_id)` makes a re-run a no-op.
- * A flag is only ever a note for a human: nothing reads it to block a sync or a payout.
+ * A flag never blocks sync. The risk-based payment policy uses unresolved flags to request review.
  */
 export async function raiseFlag(db: Queryable, flag: NewFlag): Promise<boolean> {
   const rows = await db

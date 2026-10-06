@@ -132,4 +132,13 @@ body {
     top: 0;
     left: 0;
   }
+  body.printing-area .recipient-print-card {
+    width: 85.6mm;
+    max-width: none;
+    height: 53.98mm;
+    border: none;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

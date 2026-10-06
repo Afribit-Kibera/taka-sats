@@ -31,6 +31,8 @@ type Detail = {
   syncedAt: string;
   registrationType: string;
   verificationLevel: string;
+  evidenceStatus: string;
+  ocrWeightKg: number | null;
   geo:
     | { kind: 'fix'; lat?: number; lng?: number; accuracyM?: number }
     | { kind: 'unavailable'; reason?: string };
@@ -139,6 +141,19 @@ export function EventDetail({ id }: { readonly id: string }) {
       <DataState loading={loading} error={error} onRetry={reload}>
         {event ? (
           <>
+            <Panel title={t('scaleEvidence')}>
+              <KeyValue
+                items={[
+                  { k: t('enteredWeight'), v: formatKg(event.weightKg) },
+                  {
+                    k: t('readWeight'),
+                    v: event.ocrWeightKg === null ? t('notRead') : formatKg(event.ocrWeightKg),
+                  },
+                  { k: t('evidenceResult'), v: t(`evidence.${event.evidenceStatus}`) },
+                ]}
+              />
+              <p className="mt-3 text-sm text-muted-foreground">{t('scaleEvidenceHint')}</p>
+            </Panel>
             <Panel title={t('verification')}>
               <ul className="space-y-3" data-testid="checks">
                 {event.checks.map((check) => {

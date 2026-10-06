@@ -39,7 +39,7 @@ describe('/api/v1/reconciliation — auth (no DB)', () => {
     expect((await REPORTS(new NextRequest(url('/reports')))).status).toBe(401);
   });
 
-  it.each(['supervisor', 'hub_lead', 'partner'])('403 for %s on every route', async (role) => {
+  it.each(['supervisor', 'partner'])('403 for %s on every route', async (role) => {
     authMock.mockResolvedValue(as('11111111-1111-4111-8111-111111111111', role));
     expect((await GET(new NextRequest(url(`?${PERIOD}`)))).status).toBe(403);
     expect((await run({ from: '2026-06-10', to: '2026-06-11' })).status).toBe(403);
@@ -51,6 +51,12 @@ describe('/api/v1/reconciliation — auth (no DB)', () => {
     expect((await GET(new NextRequest(url('')))).status).toBe(400);
     expect((await GET(new NextRequest(url('?from=2026-06-11&to=2026-06-10')))).status).toBe(400);
     expect((await run({ from: '2026-06-11', to: '2026-06-10' })).status).toBe(400);
+  });
+  it('hub leads can read live aggregates, not saved reports or run writes', async () => {
+    authMock.mockResolvedValue(as('11111111-1111-4111-8111-111111111111', 'hub_lead'));
+    expect((await GET(new NextRequest(url('')))).status).toBe(400);
+    expect((await run({})).status).toBe(403);
+    expect((await REPORTS(new NextRequest(url('/reports')))).status).toBe(403);
   });
 });
 

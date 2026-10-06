@@ -77,6 +77,7 @@ function requestGeo(): Promise<GeoFix> {
 }
 
 function ScreenHeader({ title, onBack }: { readonly title: string; readonly onBack?: () => void }) {
+  const t = useTranslations('Weigh');
   return (
     <header className="flex items-center justify-between gap-3 pb-5">
       <div className="flex min-w-0 items-center gap-2">
@@ -85,7 +86,7 @@ function ScreenHeader({ title, onBack }: { readonly title: string; readonly onBa
             type="button"
             onClick={onBack}
             className="flex size-11 shrink-0 items-center justify-center rounded-full active:bg-accent"
-            aria-label="Back"
+            aria-label={t('back')}
           >
             <ArrowLeft aria-hidden="true" className="size-7" />
           </button>
@@ -98,6 +99,7 @@ function ScreenHeader({ title, onBack }: { readonly title: string; readonly onBa
 }
 
 function CollectorChip({ collector }: { readonly collector: CachedCollector }) {
+  const t = useTranslations('Weigh');
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-secondary px-4 py-3">
       <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card text-primary">
@@ -109,6 +111,9 @@ function CollectorChip({ collector }: { readonly collector: CachedCollector }) {
         <strong className="block truncate font-display text-lg">{collector.alias}</strong>
         <span className="block truncate font-mono text-sm text-muted-foreground">
           {collector.publicCode ?? collector.id}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {t(collector.recipientType === 'collective' ? 'collective' : 'individual')}
         </span>
       </span>
     </div>
@@ -607,6 +612,11 @@ export function WeighFlow({
       [t('collector'), collector.alias, collector.publicCode ?? collector.id],
       [t('material'), rate.material, t('materialDescription')],
       [t('weightLabel'), `${number.format(weightKg)} kg`, t('manualSource')],
+      [
+        t('unitRate'),
+        `${rate.fiatCurrency} ${money.format(rate.rateFiatMinor / 100)}/kg`,
+        t('materialDescription'),
+      ],
       [t('value'), `${rate.fiatCurrency} ${money.format(fiatValue)}`, t('equivalent')],
       [t('indicativePayout'), `≈ ${number.format(indicative)} sats`, t('estimated')],
       [t('location'), config.location, config.sessionId],
@@ -691,6 +701,7 @@ export function WeighFlow({
       <CircleCheck aria-hidden="true" className="size-20 text-primary" />
       <h1 className="mt-5 font-display text-3xl font-bold">{t('savedQueued')}</h1>
       <p className="mt-2 text-muted-foreground">{t('savedDescription')}</p>
+      <p className="mt-2 max-w-xs text-sm text-muted-foreground">{t('checkedLater')}</p>
       <Button type="button" size="pwa" className="mt-8" onClick={resetForNext}>
         {t('weighAnother')}
       </Button>

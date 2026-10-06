@@ -6,6 +6,7 @@ import { auth } from '@/auth';
 import { ModeBanner } from '@/components/console/ModeBanner';
 import { BottomNav } from '@/components/supervisor/BottomNav';
 import { SyncManager } from '@/components/supervisor/SyncManager';
+import { isRole, roleHasScope } from '@/lib/auth/permissions';
 
 /**
  * Supervisor PWA shell (DESIGN §5.1 — thumb-first single column). Every route
@@ -13,7 +14,8 @@ import { SyncManager } from '@/components/supervisor/SyncManager';
  */
 export default async function SupervisorLayout({ children }: { readonly children: ReactNode }) {
   const session = await auth();
-  if (!session?.user) {
+  const role = session?.user?.role;
+  if (!role || !isRole(role) || !roleHasScope(role, 'collection:record')) {
     redirect('/login');
   }
 

@@ -70,8 +70,12 @@ export function Reconciliation() {
   const live = useApi<{ rows: Row[] }>(
     fromIso && toIsoValue ? `/reconciliation${query({ from: fromIso, to: toIsoValue })}` : null,
   );
-  const reports = usePaged<Report>('/reconciliation/reports?limit=20', 'reports');
-  const sales = usePaged<Sale>('/recycler-sales?limit=20', 'sales');
+  const fullReports = user.can('report:generate:all');
+  const reports = usePaged<Report>(
+    fullReports ? '/reconciliation/reports?limit=20' : null,
+    'reports',
+  );
+  const sales = usePaged<Sale>(fullReports ? '/recycler-sales?limit=20' : null, 'sales');
 
   function changed(): void {
     live.reload();
@@ -127,104 +131,108 @@ export function Reconciliation() {
 
       {user.can('reconciliation:write') ? <SaleForm onDone={changed} /> : null}
 
-      <Panel title={t('sales')}>
-        <DataState
-          loading={sales.loading}
-          error={sales.error}
-          empty={sales.items.length === 0}
-          emptyText={t('noSales')}
-          onRetry={sales.reload}
-        >
-          <TableWrap minWidth="40rem">
-            <thead>
-              <tr>
-                <Th>{t('soldAt')}</Th>
-                <Th>{t('buyer')}</Th>
-                <Th>{t('material')}</Th>
-                <Th>{t('net')}</Th>
-                <Th>{t('receipt')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {sales.items.map((s) => (
-                <tr key={s.id}>
-                  <Td>{formatDateTime(s.soldAt, user.timeZone)}</Td>
-                  <Td>{s.buyer}</Td>
-                  <Td>{s.material}</Td>
-                  <Td>{formatKg(s.weightKg)}</Td>
-                  <Td>
-                    {s.receiptPath ? (
-                      <a
-                        href={s.receiptPath}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline"
-                      >
-                        {t('viewReceipt')}
-                      </a>
-                    ) : (
-                      t('noReceipt')
-                    )}
-                  </Td>
+      {fullReports ? (
+        <Panel title={t('sales')}>
+          <DataState
+            loading={sales.loading}
+            error={sales.error}
+            empty={sales.items.length === 0}
+            emptyText={t('noSales')}
+            onRetry={sales.reload}
+          >
+            <TableWrap minWidth="40rem">
+              <thead>
+                <tr>
+                  <Th>{t('soldAt')}</Th>
+                  <Th>{t('buyer')}</Th>
+                  <Th>{t('material')}</Th>
+                  <Th>{t('net')}</Th>
+                  <Th>{t('receipt')}</Th>
                 </tr>
-              ))}
-            </tbody>
-          </TableWrap>
-          <LoadMore
-            hasMore={sales.hasMore}
-            busy={sales.loadingMore}
-            error={sales.moreError}
-            onMore={() => void sales.loadMore()}
-          />
-        </DataState>
-      </Panel>
+              </thead>
+              <tbody>
+                {sales.items.map((s) => (
+                  <tr key={s.id}>
+                    <Td>{formatDateTime(s.soldAt, user.timeZone)}</Td>
+                    <Td>{s.buyer}</Td>
+                    <Td>{s.material}</Td>
+                    <Td>{formatKg(s.weightKg)}</Td>
+                    <Td>
+                      {s.receiptPath ? (
+                        <a
+                          href={s.receiptPath}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline"
+                        >
+                          {t('viewReceipt')}
+                        </a>
+                      ) : (
+                        t('noReceipt')
+                      )}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+            <LoadMore
+              hasMore={sales.hasMore}
+              busy={sales.loadingMore}
+              error={sales.moreError}
+              onMore={() => void sales.loadMore()}
+            />
+          </DataState>
+        </Panel>
+      ) : null}
 
-      <Panel title={t('reports')}>
-        <DataState
-          loading={reports.loading}
-          error={reports.error}
-          empty={reports.items.length === 0}
-          emptyText={t('noReports')}
-          onRetry={reports.reload}
-        >
-          <TableWrap minWidth="48rem">
-            <thead>
-              <tr>
-                <Th>{t('period')}</Th>
-                <Th>{t('material')}</Th>
-                <Th>{t('collected')}</Th>
-                <Th>{t('recycler')}</Th>
-                <Th>{t('variance')}</Th>
-                <Th>{t('status')}</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.items.map((r) => (
-                <tr key={r.id}>
-                  <Td>
-                    {formatDateTime(r.periodStart, user.timeZone)} /{' '}
-                    {formatDateTime(r.periodEnd, user.timeZone)}
-                  </Td>
-                  <Td>{r.material}</Td>
-                  <Td>{formatKg(r.collectedKg)}</Td>
-                  <Td>{formatKg(r.recyclerKg)}</Td>
-                  <Td>
-                    {formatKg(r.varianceKg)}
-                    {r.variancePct !== null ? ` (${r.variancePct}%)` : ''}
-                  </Td>
-                  <Td>{t(`rowStatus.${r.status}`)}</Td>
+      {fullReports ? (
+        <Panel title={t('reports')}>
+          <DataState
+            loading={reports.loading}
+            error={reports.error}
+            empty={reports.items.length === 0}
+            emptyText={t('noReports')}
+            onRetry={reports.reload}
+          >
+            <TableWrap minWidth="48rem">
+              <thead>
+                <tr>
+                  <Th>{t('period')}</Th>
+                  <Th>{t('material')}</Th>
+                  <Th>{t('collected')}</Th>
+                  <Th>{t('recycler')}</Th>
+                  <Th>{t('variance')}</Th>
+                  <Th>{t('status')}</Th>
                 </tr>
-              ))}
-            </tbody>
-          </TableWrap>
-          <LoadMore
-            hasMore={reports.hasMore}
-            busy={reports.loadingMore}
-            error={reports.moreError}
-            onMore={() => void reports.loadMore()}
-          />
-        </DataState>
-      </Panel>
+              </thead>
+              <tbody>
+                {reports.items.map((r) => (
+                  <tr key={r.id}>
+                    <Td>
+                      {formatDateTime(r.periodStart, user.timeZone)} /{' '}
+                      {formatDateTime(r.periodEnd, user.timeZone)}
+                    </Td>
+                    <Td>{r.material}</Td>
+                    <Td>{formatKg(r.collectedKg)}</Td>
+                    <Td>{formatKg(r.recyclerKg)}</Td>
+                    <Td>
+                      {formatKg(r.varianceKg)}
+                      {r.variancePct !== null ? ` (${r.variancePct}%)` : ''}
+                    </Td>
+                    <Td>{t(`rowStatus.${r.status}`)}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableWrap>
+            <LoadMore
+              hasMore={reports.hasMore}
+              busy={reports.loadingMore}
+              error={reports.moreError}
+              onMore={() => void reports.loadMore()}
+            />
+          </DataState>
+        </Panel>
+      ) : null}
     </div>
   );
 }

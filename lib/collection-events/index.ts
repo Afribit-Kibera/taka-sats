@@ -352,6 +352,7 @@ export async function ingestCollectionEvent(
         recordedAt,
         registrationType: input.registrationType,
         weightSource: input.weightSource ?? 'manual',
+        evidenceStatus: getSettings().verification.provider === 'none' ? 'manual' : 'pending',
         ...(input.scaleId ? { scaleId: input.scaleId } : {}),
         ...(input.scaleReadingRaw ? { scaleReadingRaw: input.scaleReadingRaw } : {}),
       });

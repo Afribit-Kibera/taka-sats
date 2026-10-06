@@ -34,6 +34,7 @@ export {
   type PayoutRecord,
   type PayoutStatus,
 } from './process';
+export { payoutReviewSchema, reviewPayout, type PayoutReviewInput } from './review';
 export {
   getPayoutView,
   listPayouts,

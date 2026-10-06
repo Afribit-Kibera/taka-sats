@@ -18,6 +18,9 @@ import {
 import { enqueuePayoutsAwaitingDestination, processPayoutJob, sweepPayouts } from './processPayout';
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);
+vi.mock('@/lib/storage', () => ({
+  photoUrlFor: vi.fn(async () => 'https://storage.example/photo'),
+}));
 
 describe.skipIf(!hasDatabase)('payout jobs (integration)', () => {
   const db = hasDatabase ? getDb() : undefined!;
@@ -28,6 +31,7 @@ describe.skipIf(!hasDatabase)('payout jobs (integration)', () => {
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     process.env.TAKASATS__PAYOUTS__REQUIRE_APPROVAL_FIRST_PAYOUT = 'false';
+    process.env.TAKASATS__PAYOUTS__APPROVAL_MODE = 'legacy';
     resetSettingsCache();
     world = await seedPayoutWorld(db);
     fake = new FakeLightningProvider();
@@ -35,6 +39,7 @@ describe.skipIf(!hasDatabase)('payout jobs (integration)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     delete process.env.TAKASATS__PAYOUTS__REQUIRE_APPROVAL_FIRST_PAYOUT;
+    delete process.env.TAKASATS__PAYOUTS__APPROVAL_MODE;
     resetSettingsCache();
   });
   afterAll(async () => {

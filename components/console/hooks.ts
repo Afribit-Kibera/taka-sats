@@ -63,7 +63,7 @@ type More<T> = {
  * the next page; a reload (or a new path) starts over from the first page.
  */
 export function usePaged<T>(
-  path: string,
+  path: string | null,
   listKey: string,
 ): {
   readonly items: readonly T[];
@@ -91,7 +91,7 @@ export function usePaged<T>(
   const items = fresh ? [...firstItems, ...more.items] : firstItems;
 
   async function loadMore(): Promise<void> {
-    if (nextCursor === null || nextCursor === undefined) {
+    if (!path || nextCursor === null || nextCursor === undefined) {
       return;
     }
     const base: More<T> = fresh

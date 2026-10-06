@@ -25,7 +25,7 @@ starts on a half-valid config. The validated object is deep-frozen and exported 
 
 ## Secrets are never in TOML
 
-`DATABASE_URL`, `BLINK_API_KEY`, `LNBITS_ADMIN_KEY`, `LNBITS_USERMANAGER_KEY`,
+`DATABASE_URL`, `BLINK_API_KEY`, `OPENROUTER_API_KEY`, `LNBITS_ADMIN_KEY`, `LNBITS_USERMANAGER_KEY`,
 `NOSTR_PRIVATE_KEY`, `AUTH_SECRET`, `LEDGER_SIGNING_KEY` (base64 Ed25519 seed - see
 [`LEDGER.md`](LEDGER.md)),
 and object-storage credentials are environment variables only. `settings.toml` may name
@@ -47,8 +47,9 @@ Every key there carries a comment. Summary of the sections:
 | `[lightning]` | `float_provider` (`blink` \| `lnbits` \| `fedimint` \| `fake` - a demo rail that pays nothing; refused in production unless `TAKASATS_ALLOW_FAKE_PROVIDER=true`), each provider's non-secret settings, and `provider_hints` (a label per Lightning-address domain - display only), `spend_link_hosts` (hosts whose URLs are spend credentials - rejected before any network call), `lnurl_timeout_ms` (per-request LNURL timeout, 1000-60000), `provider_timeout_ms` (per-request timeout to the wallet provider, 1000-120000; a timeout on a payment is an unknown outcome, never a failure) |
 | `[money]` | BTC rate staleness TTL; the ordered list of exchange-rate sources (≥2); the agreement tolerance (an outlier source is set aside; ≥2 must agree within it) |
 | `[rates]` | `seed` rows for `material_rates` on the first migration only - history lives in the DB afterwards |
-| `[payouts]` | Second-sign-off threshold (`0` holds every payout for review), `require_approval_first_payout`, low-float alert threshold, auto-topup flag, `sweep_cron`, `sending_stale_minutes`, `resolution_requires_distinct_actor` (an admin who neither recorded nor approved must resolve a stuck payout; set false only on a one-admin deployment), `max_attempts` |
-| `[treasury]` | `topup_approvals_required` (distinct stewards who approve a pool-to-hot-wallet refill, the proposer never counts), `hot_wallet_cap_sats` (ceiling on the hot wallet, `0` = no cap; funding already in flight counts toward it) |
+| `[payouts]` | `approval_mode = "risk_based"` uses evidence and `review_threshold_fiat_minor` (default 100000 = KES 1000, strictly above; 0 holds all positive-value work). `legacy` retains the sats sign-off threshold and first-destination approval policy. Both modes require a stored photo. Low-float alert threshold, `sweep_cron`, `sending_stale_minutes`, `resolution_requires_distinct_actor`, `max_attempts` remain operational. |
+| `[verification]` | `provider` (`none` or `openrouter`), vision `model` (default `mistralai/mistral-small-3.2-24b-instruct`), `timeout_ms` (30000, range 1000-120000), `max_tokens` (256, range 128-4096), `min_confidence` (0.9), `ocr_required_for_autopay` (true), `weight_tolerance_kg` (0.1), `max_autopay_weight_kg` (100). `none` never claims AI verification; with required OCR it routes manual evidence to review. |
+| `[treasury]` | Legacy funding-vote settings retained for compatibility/history only. Funding mutations and the confirmation job are retired; these values no longer enforce external deposits or a wallet balance cap. Keep float small through the wallet provider's own controls. |
 | `[reconciliation]` | Paid-kg vs sold-kg variance tolerance |
 | `[anomaly]` | Detector thresholds (identical-weight repeats, payout concentration, off-hours grace; `weight_outlier_min_events` prior events a material needs before its weights are judged, and `weight_outlier_mad_k`, how many scaled MADs from the median make an outlier) |
 | `[scheduling]` | Coverage-gap alert lead time |
@@ -67,6 +68,16 @@ Every key there carries a comment. Summary of the sections:
 - `money.exchange_sources` needs at least two entries (D-18 - no single oracle).
 
 ## What is *not* in the settings file
+
+### Scale-photo privacy and rollout
+
+OpenRouter receives only the stored photograph, not entered kilograms, aliases, payment addresses or GPS
+fields. Photographs can themselves contain people or identifying details: brief staff to frame only the
+display and load. Requests require structured output, no provider data collection and zero-data-retention
+routing. Unsupported routing, missing keys, timeouts or ambiguous readings require review, never a guessed
+weight. Configure OpenRouter spend limits externally as well as the response-token and timeout limits.
+Synthetic fixtures confirm connectivity, not accuracy on a programme's actual scale. Test representative
+clear, blurred and mismatched photographs before relying on automatic payment.
 
 Operational data that changes while the system runs - rate *versions* over time, sessions,
 supervisor rotations, API keys, collectors - lives in the database and is edited through

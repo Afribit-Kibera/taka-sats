@@ -8,6 +8,9 @@
 
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/lib/storage', () => ({
+  photoUrlFor: vi.fn(async () => 'https://storage.example/photo'),
+}));
 import { resetSettingsCache } from '@/lib/config';
 import { getDb } from '@/lib/db/client';
 import { anomalyFlags, ledgerEntries, payoutResolutions, payouts } from '@/lib/db/schema';
@@ -70,6 +73,7 @@ describe.skipIf(!hasDatabase)('lib/payouts resolve (integration)', () => {
   let admin3: string;
 
   beforeEach(async () => {
+    process.env.TAKASATS__PAYOUTS__APPROVAL_MODE = 'legacy';
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     process.env.TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS = '50000';
@@ -80,6 +84,7 @@ describe.skipIf(!hasDatabase)('lib/payouts resolve (integration)', () => {
     admin3 = (await createStaff(db, 'admin', 'Admin Three')).id;
   });
   afterEach(() => {
+    delete process.env.TAKASATS__PAYOUTS__APPROVAL_MODE;
     vi.restoreAllMocks();
     delete process.env.TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS;
     delete process.env.TAKASATS__PAYOUTS__REQUIRE_APPROVAL_FIRST_PAYOUT;

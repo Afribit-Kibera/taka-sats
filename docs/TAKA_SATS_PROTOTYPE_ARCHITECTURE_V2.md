@@ -1,6 +1,9 @@
 # Taka Sats — Cardless Launch & Optional NFC Pilot Architecture
 
 **Status:** Proposed architecture update for prototype  
+**Current implementation:** Field-first individual/collective recipients and risk-based payment are
+specified in [ADR-0021](adr/0021-field-first-risk-based-payments.md) and [BACKEND.md](BACKEND.md).
+These supersede old treasury-vote/universal-approval descriptions; NFC remains optional identity only.
 **Date:** 2026-10-01  
 **Project:** Taka Sats — Waste-to-Bitcoin Earn-First Programme  
 **Organisation:** Afribit Africa  

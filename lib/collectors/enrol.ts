@@ -92,6 +92,7 @@ export async function enrolCollector(
       .values({
         ...(parsed.id ? { id: parsed.id } : {}),
         alias: parsed.alias,
+        recipientType: parsed.recipientType ?? 'individual',
         addressSource,
         enrolledAt: now,
         publicCode,

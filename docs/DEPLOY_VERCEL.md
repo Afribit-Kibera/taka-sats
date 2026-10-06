@@ -1,5 +1,21 @@
 # Deploying Taka Sats to Vercel
 
+## Field-first release checks (2026-10-06)
+
+The stateful VM must run migration 0013 via the tools service, with a verified pre-migration database
+backup. Build authenticated assets with `TAKASATS_ASSET_PREFIX=/_vm`, preserving the canonical frontend
+proxy. Configure `OPENROUTER_API_KEY` only on the backend and explicitly set verification provider/model,
+required OCR and risk-based review threshold. Old sats-threshold 0 does not hold risk-mode work; choose
+`approval_mode=legacy` deliberately if retaining the former universal review policy.
+
+Use isolated DB/storage and a fake rail for automated write-based smoke tests. On the live rail,
+`pilot:smoke` requires owner-supervised `--pay-real` before creating any work because sync can auto-pay.
+Production release verification can check health, sign-in, RBAC and read endpoints without creating
+collections or approving money. Invalid OCR holds for review; enabling a provider is not proof of real
+scale accuracy. Roll back to the saved image/release/environment if health, login, proxy assets or worker
+startup fail. The additive migration can remain while the old image runs; do not revert after new records
+without reviewing data loss from removing derived evidence/review fields.
+
 The Vercel path runs the same Next.js project as Docker Compose. Neon supplies PostgreSQL and Cloudflare R2 supplies object storage when those features land.
 
 ## Frontend on Vercel, backend on the VM

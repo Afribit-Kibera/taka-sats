@@ -44,6 +44,10 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
   browser,
 }) => {
   test.setTimeout(240_000);
+  test.skip(
+    !process.env.E2E_S3_ENDPOINT,
+    'Full payment story requires explicit isolated E2E object storage.',
+  );
   const admin = await personContext(browser, ADMINS[0], '/admin');
   const hub = await personContext(browser, HUB_LEAD, '/admin');
   const second = await personContext(browser, ADMINS[1], '/admin');
@@ -149,10 +153,13 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
     await page.goto('/payouts?status=pending_approval');
     const row = page.getByTestId('payout-row').filter({ hasText: ALIAS });
     await expect(row).toBeVisible();
-    await row.getByTestId('approve-payout').click();
-    // Approving releases real money on a live rail, so it asks first.
-    await row.getByRole('button', { name: 'Yes, do it' }).click();
-    await expect(page.getByTestId('payout-row').filter({ hasText: ALIAS })).toHaveCount(0);
+    await row.getByTestId('open-payout-review').click();
+    await page
+      .getByTestId('review-reason')
+      .fill('Manual display checked against the recorded kilograms.');
+    page.once('dialog', (dialog) => void dialog.accept());
+    await page.getByTestId('approve-payout').click();
+    await expect(page.getByTestId('review-reason')).toHaveCount(0);
   }
 
   // 7. The worker pays (see the note above: the handler is called from here).

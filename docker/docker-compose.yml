@@ -14,6 +14,13 @@ x-app-environment: &app-environment
   # Lightning provider secrets (D-21 §13.1) — only the one matching
   # lightning.float_provider needs a real value; unused otherwise.
   BLINK_API_KEY: ${BLINK_API_KEY:-}
+  # Scale evidence runs server-side. Never use a NEXT_PUBLIC_ secret.
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  TAKASATS__VERIFICATION__PROVIDER: ${TAKASATS__VERIFICATION__PROVIDER:-none}
+  TAKASATS__VERIFICATION__MODEL: ${TAKASATS__VERIFICATION__MODEL:-mistralai/mistral-small-3.2-24b-instruct}
+  TAKASATS__VERIFICATION__OCR_REQUIRED_FOR_AUTOPAY: ${TAKASATS__VERIFICATION__OCR_REQUIRED_FOR_AUTOPAY:-true}
+  TAKASATS__PAYOUTS__APPROVAL_MODE: ${TAKASATS__PAYOUTS__APPROVAL_MODE:-risk_based}
+  TAKASATS__PAYOUTS__REVIEW_THRESHOLD_FIAT_MINOR: ${TAKASATS__PAYOUTS__REVIEW_THRESHOLD_FIAT_MINOR:-100000}
   LNBITS_ADMIN_KEY: ${LNBITS_ADMIN_KEY:-}
   LNBITS_USERMANAGER_KEY: ${LNBITS_USERMANAGER_KEY:-}
   # The fake provider is a deliberate showcase-only rail. Production rejects it
@@ -23,7 +30,7 @@ x-app-environment: &app-environment
   # host settings.toml (for example, a Cloudflare Tunnel origin).
   TAKASATS__PROGRAMME__PUBLIC_BASE_URL: ${TAKASATS__PROGRAMME__PUBLIC_BASE_URL:-https://taka.afribit.africa}
   TAKASATS__LIGHTNING__FLOAT_PROVIDER: ${TAKASATS__LIGHTNING__FLOAT_PROVIDER:-blink}
-  # The Blink BTC wallet id (not secret; the API key is BLINK_API_KEY) and the funding-vote policy.
+  # Blink BTC wallet id (not secret). Legacy treasury config is kept for historical readers only.
   TAKASATS__LIGHTNING__BLINK__FLOAT_WALLET_ID: ${TAKASATS__LIGHTNING__BLINK__FLOAT_WALLET_ID:-}
   TAKASATS__TREASURY__TOPUP_APPROVALS_REQUIRED: ${TAKASATS__TREASURY__TOPUP_APPROVALS_REQUIRED:-2}
   TAKASATS__TREASURY__HOT_WALLET_CAP_SATS: ${TAKASATS__TREASURY__HOT_WALLET_CAP_SATS:-0}

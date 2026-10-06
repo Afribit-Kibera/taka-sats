@@ -12,7 +12,6 @@ import { getDb } from '@/lib/db/client';
 import { collectorPaymentDestinations } from '@/lib/db/schema';
 import { completeDestinationValidation } from '@/lib/collectors';
 import { getCollectorWalletProvisioner, getLightningProvider } from '@/lib/lightning';
-import { confirmTreasuryTopups } from './confirmTreasuryTopups';
 import { createLedgerCheckpoint } from './createLedgerCheckpoint';
 import { enqueueProcessPayout } from './queue';
 import { enqueuePayoutsAwaitingDestination, processPayoutJob, sweepPayouts } from './processPayout';
@@ -79,12 +78,8 @@ export async function registerWorkers(boss: PgBoss): Promise<void> {
   });
   await boss.schedule(JOB_SWEEP_PAYOUTS, getSettings().payouts.sweep_cron);
 
-  // A funding proposal is confirmed when the hot wallet's own balance shows the funds; the
-  // payouts that were waiting for them are then woken straight away (the sweep above is the backstop).
-  await boss.work(JOB_CONFIRM_TREASURY_TOPUPS, async () => {
-    await confirmTreasuryTopups(getDb(), getLightningProvider(), enqueueProcessPayout);
-  });
-  await boss.schedule(JOB_CONFIRM_TREASURY_TOPUPS, getSettings().payouts.sweep_cron);
+  // External programme treasury is outside Taka Sats. Remove a previously persisted vote schedule.
+  await boss.unschedule(JOB_CONFIRM_TREASURY_TOPUPS);
 
   await boss.work(JOB_REFRESH_EXCHANGE_RATE, async (jobs) => {
     const db = getDb();

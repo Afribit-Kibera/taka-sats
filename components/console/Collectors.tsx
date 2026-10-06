@@ -24,6 +24,7 @@ import { maskAddress } from '@/lib/console/format';
 export type CollectorRow = {
   id: string;
   alias: string;
+  recipientType?: 'individual' | 'collective';
   publicCode: string;
   nfcTagId: string | null;
   status: string;
@@ -112,6 +113,9 @@ export function Collectors() {
                     <div>
                       <Mono>{c.publicCode}</Mono>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t(c.recipientType === 'collective' ? 'collective' : 'individual')}
+                    </p>
                   </Td>
                   <Td>
                     <DomainPill domain="collector" value={c.status} />

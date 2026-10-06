@@ -15,7 +15,9 @@ import { randomBytes } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/storage', () => ({ photoUrlFor: vi.fn(async () => null) }));
+vi.mock('@/lib/storage', () => ({
+  photoUrlFor: vi.fn(async () => 'https://storage.example/photo'),
+}));
 
 import { resetSettingsCache } from '@/lib/config';
 import { attachDestination, decideCollectorAuthorization, enrolCollector } from '@/lib/collectors';
@@ -57,6 +59,7 @@ describe.skipIf(!hasDatabase)('the whole money story (demo rail, real database)'
   const seed = randomBytes(32).toString('base64');
 
   beforeAll(() => {
+    process.env.TAKASATS__PAYOUTS__APPROVAL_MODE = 'legacy';
     vi.spyOn(console, 'info').mockImplementation(() => undefined);
     // 5,000,000 KES per BTC and 2000 minor per kg: 2.5 kg is 1000 sats. Hold EVERY payout for review.
     process.env.TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS = '0';
@@ -67,6 +70,7 @@ describe.skipIf(!hasDatabase)('the whole money story (demo rail, real database)'
   afterAll(async () => {
     vi.restoreAllMocks();
     for (const key of [
+      'TAKASATS__PAYOUTS__APPROVAL_MODE',
       'TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS',
       'TAKASATS__TREASURY__TOPUP_APPROVALS_REQUIRED',
       'TAKASATS__TREASURY__HOT_WALLET_CAP_SATS',

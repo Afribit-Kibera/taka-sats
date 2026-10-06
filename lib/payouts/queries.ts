@@ -26,6 +26,11 @@ export type PayoutView = {
   readonly providerPaymentRef: string | null;
   readonly approvedBy: string | null;
   readonly approvedAt: Date | null;
+  readonly recipientType: string;
+  readonly reviewDecision: string | null;
+  readonly reviewedBy: string | null;
+  readonly reviewedAt: Date | null;
+  readonly reviewReason: string | null;
   readonly lastError: string | null;
   readonly attempts: number;
   readonly createdAt: Date;
@@ -62,6 +67,11 @@ const view = {
   providerPaymentRef: payouts.providerPaymentRef,
   approvedBy: payouts.approvedBy,
   approvedAt: payouts.approvedAt,
+  recipientType: collectors.recipientType,
+  reviewDecision: payouts.reviewDecision,
+  reviewedBy: payouts.reviewedBy,
+  reviewedAt: payouts.reviewedAt,
+  reviewReason: payouts.reviewReason,
   lastError: payouts.lastError,
   attempts: payouts.attempts,
   createdAt: payouts.createdAt,

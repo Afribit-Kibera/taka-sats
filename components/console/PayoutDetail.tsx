@@ -46,7 +46,11 @@ export function PayoutDetail({ id }: { readonly id: string }) {
                           k: t('lastError'),
                           v: (
                             <>
-                              <Mono>{payout.lastError}</Mono>
+                              <p>
+                                {t.has(`risk.${payout.lastError}`)
+                                  ? t(`risk.${payout.lastError}`)
+                                  : payout.lastError}
+                              </p>
                               {payout.lastError === 'outcome_unknown' ? (
                                 <p className="mt-1 text-sm">{t('outcomeUnknownHelp')}</p>
                               ) : null}
@@ -103,6 +107,15 @@ export function PayoutDetail({ id }: { readonly id: string }) {
                     ),
                   },
                   { k: t('attempts'), v: payout.attempts },
+                  ...(payout.reviewDecision
+                    ? [
+                        {
+                          k: t('reviewDecision'),
+                          v: t(`reviewDecisions.${payout.reviewDecision}`),
+                        },
+                        { k: t('reviewNote'), v: payout.reviewReason ?? t('none') },
+                      ]
+                    : []),
                   { k: t('provider'), v: payout.provider ?? t('none') },
                   {
                     k: t('paymentRef'),
@@ -120,7 +133,10 @@ export function PayoutDetail({ id }: { readonly id: string }) {
                 ]}
               />
               <div className="mt-4">
-                <PayoutActions payout={payout} onChanged={reload} />
+                <PayoutActions payout={payout} onChanged={reload} showReviewForm />
+                {payout.reviewDecision === 'rejected' || payout.reviewDecision === 'reweigh' ? (
+                  <p className="mt-3 text-sm text-muted-foreground">{t('reviewFinal')}</p>
+                ) : null}
                 {payout.status === 'pending_approval' ? (
                   <p className="mt-2 text-xs text-muted-foreground">{t('approveHint')}</p>
                 ) : null}

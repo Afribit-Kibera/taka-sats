@@ -108,11 +108,13 @@ describe.skipIf(!hasDatabase)('GET /api/v1/events — integration', () => {
     expect(Object.keys(item).sort()).toEqual(
       [
         'collector',
+        'evidenceStatus',
         'geo',
         'id',
         'indicativeSats',
         'material',
         'openFlags',
+        'ocrWeightKg',
         'payout',
         'photoPath',
         'photoSha256',

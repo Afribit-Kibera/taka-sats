@@ -7,13 +7,18 @@
  * here. Browser-only; do not import from a Server Component.
  */
 
+import { parseCollectorRef } from '@/lib/collectors/reference';
+
 type NdefRecordInit = { recordType: string; data?: string };
 type NdefWriteMessage = { records: NdefRecordInit[] };
 type NdefRecordRead = { recordType: string; data?: DataView; encoding?: string };
 type NdefReadingEvent = { serialNumber: string; message?: { records: NdefRecordRead[] } };
 
 type NDEFReader = {
-  write(message: NdefWriteMessage, options?: { signal?: AbortSignal }): Promise<void>;
+  write(
+    message: NdefWriteMessage,
+    options?: { signal?: AbortSignal; overwrite?: boolean },
+  ): Promise<void>;
   scan(options?: { signal?: AbortSignal }): Promise<void>;
   addEventListener(type: 'reading', listener: (event: NdefReadingEvent) => void): void;
   addEventListener(type: 'readingerror', listener: () => void): void;
@@ -27,33 +32,6 @@ function getNdefReader(): NDEFReaderConstructor | undefined {
 
 export function isWebNfcAvailable(): boolean {
   return getNdefReader() !== undefined;
-}
-
-/**
- * Write a single URL record (the collector's LNURL-pay link / Lightning
- * Address) to whatever blank NTAG is presented, then read the tag back once
- * to capture its hardware serial number — that serial is our `tag_history.tag_id`.
- */
-export async function writeTagAndReadSerial(url: string, signal?: AbortSignal): Promise<string> {
-  const Reader = getNdefReader();
-  if (!Reader) {
-    throw new Error('Web NFC is not available on this device');
-  }
-
-  const writer = new Reader();
-  await writer.write(
-    { records: [{ recordType: 'url', data: url }] },
-    signal ? { signal } : undefined,
-  );
-
-  const reader = new Reader();
-  const serial = await new Promise<string>((resolve, reject) => {
-    reader.addEventListener('reading', (event) => resolve(event.serialNumber));
-    reader.addEventListener('readingerror', () => reject(new Error('Could not read the tag back')));
-    reader.scan(signal ? { signal } : undefined).catch(reject);
-  });
-
-  return serial;
 }
 
 /**
@@ -99,6 +77,16 @@ export async function writeCollectorCard(
   card: { readonly payload: string; readonly url: string },
   signal?: AbortSignal,
 ): Promise<string> {
+  const code = parseCollectorRef(card.payload);
+  // Only identity references may be written. A payout or spending credential is never a card ID.
+  if (
+    !code ||
+    !card.payload.startsWith('takasats:') ||
+    parseCollectorRef(card.url) !== code ||
+    !card.url.startsWith('https://')
+  ) {
+    throw new Error('Card must contain matching identity references');
+  }
   const Reader = getNdefReader();
   if (!Reader) {
     throw new Error('Web NFC is not available on this device');
@@ -111,9 +99,17 @@ export async function writeCollectorCard(
         { recordType: 'url', data: card.url },
       ],
     },
-    signal ? { signal } : undefined,
+    { ...(signal && { signal }), overwrite: false },
   );
-  return readCard(signal).then((content) => content.serial);
+  const content = await readCard(signal);
+  if (
+    !content.serial ||
+    !content.texts.includes(card.payload) ||
+    !content.texts.includes(card.url)
+  ) {
+    throw new Error('Card read-back did not match the identity written');
+  }
+  return content.serial;
 }
 
 /** Read one card presented to the phone: its serial and the text and URL records on it. */
@@ -123,11 +119,37 @@ export async function readCard(signal?: AbortSignal): Promise<CardContent> {
     throw new Error('Web NFC is not available on this device');
   }
   const reader = new Reader();
+  const controller = new AbortController();
   return new Promise<CardContent>((resolve, reject) => {
-    reader.addEventListener('reading', (event) =>
-      resolve({ serial: event.serialNumber, texts: decodeRecords(event.message?.records) }),
-    );
-    reader.addEventListener('readingerror', () => reject(new Error('Could not read the card')));
-    reader.scan(signal ? { signal } : undefined).catch(reject);
+    function finish(error?: Error, content?: CardContent): void {
+      signal?.removeEventListener('abort', onAbort);
+      controller.abort();
+      if (error) reject(error);
+      else if (content) resolve(content);
+    }
+    function onAbort(): void {
+      finish(new DOMException('Card scan cancelled', 'AbortError'));
+    }
+    if (signal?.aborted) {
+      onAbort();
+      return;
+    }
+    signal?.addEventListener('abort', onAbort, { once: true });
+    reader.addEventListener('reading', (event) => {
+      try {
+        finish(undefined, {
+          serial: event.serialNumber,
+          texts: decodeRecords(event.message?.records),
+        });
+      } catch {
+        finish(new Error('Could not decode the card'));
+      }
+    });
+    reader.addEventListener('readingerror', () => finish(new Error('Could not read the card')));
+    reader
+      .scan({ signal: controller.signal })
+      .catch((error: unknown) =>
+        finish(error instanceof Error ? error : new Error('Could not read the card')),
+      );
   });
 }

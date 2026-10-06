@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 'use client';
 import { CircleCheck, OctagonX, ScanLine } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useCallback, useState } from 'react';
+import { type FormEvent, useCallback, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { isWebNfcAvailable, writeTagAndReadSerial } from '@/lib/nfc';
 import { QrScanner } from './QrScanner';
 type Step = 'alias' | 'scanning' | 'validated' | 'rejected' | 'done';
 type CollectorResponse = {
   collector: {
     id: string;
+    alias: string;
     publicCode: string;
     status: string;
     lightningAddress: string | null;
@@ -48,10 +49,13 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
   const t = useTranslations('Enrol');
   const [step, setStep] = useState<Step>('alias');
   const [alias, setAlias] = useState('');
+  const [recipientType, setRecipientType] = useState<'individual' | 'collective'>('individual');
+  const registering = useRef(false);
+  const registrationId = useRef<string | null>(null);
+  const submitting = useRef(false);
   const [collectorId, setCollectorId] = useState<string | null>(null);
   const [payTarget, setPayTarget] = useState<string | null>(null);
   const [manualCode, setManualCode] = useState('');
-  const [manualTagId, setManualTagId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [publicCode, setPublicCode] = useState<string | null>(null);
@@ -71,84 +75,78 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
     [t],
   );
   const startScan = useCallback(async () => {
-    setBusy(true);
-    setMessage(null);
-    const res = await postJson('/api/v1/collectors', { alias: alias.trim() });
-    setBusy(false);
-    if (!res.ok) {
-      setMessage(await errorText(res, t('enrolFailed')));
+    if (registering.current) return;
+    if (collectorId) {
+      setStep('scanning');
       return;
     }
-    const { collector } = (await res.json()) as CollectorResponse;
-    setCollectorId(collector.id);
-    setPublicCode(collector.publicCode);
-    setPendingAuth(collector.status !== 'active');
-    setStep('scanning');
-  }, [alias, errorText, t]);
-  const submitCode = useCallback(
-    async (raw: string) => {
-      if (!collectorId || !raw.trim()) {
-        return;
-      }
-      setBusy(true);
-      setMessage(null);
-      const res = await postJson(`/api/v1/collectors/${collectorId}/destinations`, {
-        rawCode: raw.trim(),
-      });
-      setBusy(false);
-      if (res.ok) {
-        const { collector, destination } = (await res.json()) as CollectorResponse;
-        setPayTarget(destination?.address ?? collector.lnurlPayRaw ?? collector.lightningAddress);
-        setWalletChecking(res.status === 202);
-        setHasWallet(true);
-        setStep('validated');
-        return;
-      }
-      setMessage(await errorText(res, t('addressInvalid')));
-      setStep('rejected');
-    },
-    [collectorId, errorText, t],
-  );
-  const registerTag = useCallback(
-    async (tagId: string) => {
-      if (!collectorId || !tagId.trim()) {
-        return;
-      }
-      setBusy(true);
-      setMessage(null);
-      const res = await postJson(`/api/v1/collectors/${collectorId}/tags`, {
-        newTagId: tagId.trim(),
-      });
-      setBusy(false);
-      if (!res.ok) {
-        setMessage(t('tagFailed'));
-        return;
-      }
-      setStep('done');
-    },
-    [collectorId, t],
-  );
-  const writeViaNfc = useCallback(async () => {
-    if (!payTarget) {
-      return;
-    }
+    registering.current = true;
     setBusy(true);
     setMessage(null);
     try {
-      const serial = await writeTagAndReadSerial(payTarget);
-      await registerTag(serial);
+      registrationId.current ??= crypto.randomUUID();
+      const res = await postJson('/api/v1/collectors', {
+        id: registrationId.current,
+        alias: alias.trim(),
+        recipientType,
+      });
+      if (!res.ok) {
+        setMessage(await errorText(res, t('enrolFailed')));
+        return;
+      }
+      const { collector } = (await res.json()) as CollectorResponse;
+      setCollectorId(collector.id);
+      setAlias(collector.alias);
+      setPublicCode(collector.publicCode);
+      setPendingAuth(collector.status !== 'active');
+      setStep('scanning');
     } catch {
+      setMessage(t('enrolFailed'));
+    } finally {
+      registering.current = false;
       setBusy(false);
-      setMessage(t('nfcFailed'));
     }
-  }, [payTarget, registerTag, t]);
+  }, [alias, collectorId, recipientType, errorText, t]);
+  const submitCode = useCallback(
+    async (raw: string) => {
+      if (!collectorId || !raw.trim() || submitting.current) {
+        return;
+      }
+      setBusy(true);
+      submitting.current = true;
+      setMessage(null);
+      try {
+        const res = await postJson(`/api/v1/collectors/${collectorId}/destinations`, {
+          rawCode: raw.trim(),
+        });
+        if (res.ok) {
+          const { collector, destination } = (await res.json()) as CollectorResponse;
+          setPayTarget(destination?.address ?? collector.lnurlPayRaw ?? collector.lightningAddress);
+          setWalletChecking(res.status === 202);
+          setHasWallet(true);
+          setStep('validated');
+          return;
+        }
+        setMessage(await errorText(res, t('addressInvalid')));
+        setStep('rejected');
+      } catch {
+        setMessage(t('enrolFailed'));
+        setStep('rejected');
+      } finally {
+        submitting.current = false;
+        setBusy(false);
+      }
+    },
+    [collectorId, errorText, t],
+  );
   const reset = useCallback(() => {
+    registrationId.current = null;
     setStep('alias');
     setAlias('');
+    setRecipientType('individual');
     setCollectorId(null);
     setPayTarget(null);
     setManualCode('');
-    setManualTagId('');
     setMessage(null);
     setPublicCode(null);
     setPendingAuth(false);
@@ -176,6 +174,10 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
         {walletChecking ? (
           <p className="text-sm text-muted-foreground">{t('walletChecking')}</p>
         ) : null}
+        <p className="text-sm text-muted-foreground">{t('cardLater')}</p>
+        <Link href="/cards" className="inline-block min-h-11 py-3 text-sm underline">
+          {t('cardsLink')}
+        </Link>
         <Button size="pwa" onClick={reset}>
           {t('enrolAnother')}
         </Button>
@@ -184,6 +186,30 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
   }
   return (
     <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">{t('onlineRegistration')}</p>
+      <fieldset disabled={step !== 'alias' || collectorId !== null} className="space-y-2">
+        <legend className="mb-2 font-display text-sm font-medium">{t('recipientType')}</legend>
+        <div className="grid grid-cols-2 gap-3">
+          {(['individual', 'collective'] as const).map((type) => (
+            <label
+              key={type}
+              className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4"
+            >
+              <input
+                type="radio"
+                name="recipientType"
+                value={type}
+                checked={recipientType === type}
+                onChange={() => setRecipientType(type)}
+              />
+              {t(type)}
+            </label>
+          ))}
+        </div>
+        {recipientType === 'collective' ? (
+          <p className="text-sm text-muted-foreground">{t('collectiveHint')}</p>
+        ) : null}
+      </fieldset>
       <div className="space-y-1.5">
         <Label htmlFor="alias">{t('aliasLabel')}</Label>
         <Input
@@ -193,7 +219,7 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
           placeholder={t('aliasPlaceholder')}
           className="h-14 text-lg"
           autoComplete="off"
-          disabled={step !== 'alias'}
+          disabled={step !== 'alias' || collectorId !== null}
         />
       </div>
       {(step === 'alias' || step === 'rejected') && (
@@ -229,39 +255,9 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
           {walletChecking ? (
             <p className="text-sm text-muted-foreground">{t('walletChecking')}</p>
           ) : null}
-          {pendingAuth ? (
-            <Button size="pwa" onClick={() => setStep('done')} data-testid="finish-pending">
-              {t('finishPending')}
-            </Button>
-          ) : isWebNfcAvailable() ? (
-            <Button size="pwa" onClick={writeViaNfc} disabled={busy}>
-              {t('writeTagButton')}
-            </Button>
-          ) : (
-            <form
-              className="space-y-2"
-              onSubmit={(e: FormEvent<HTMLFormElement>) => {
-                e.preventDefault();
-                void registerTag(manualTagId);
-              }}
-            >
-              <Label htmlFor="tagId">{t('manualTagLabel')}</Label>
-              <Input
-                id="tagId"
-                value={manualTagId}
-                onChange={(e) => setManualTagId(e.target.value)}
-                placeholder={t('manualTagPlaceholder')}
-              />
-              <Button type="submit" size="pwa" disabled={busy || manualTagId.trim().length === 0}>
-                {t('registerTagButton')}
-              </Button>
-            </form>
-          )}
-          {pendingAuth ? null : (
-            <Button variant="ghost" onClick={() => setStep('done')}>
-              {t('skipTag')}
-            </Button>
-          )}
+          <Button size="pwa" onClick={() => setStep('done')} data-testid="finish-pending">
+            {pendingAuth ? t('finishPending') : t('finishRegistration')}
+          </Button>
         </div>
       ) : null}
       {message && step !== 'rejected' ? (
@@ -296,7 +292,7 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
                   id="manualCode"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
-                  placeholder="lnurl1… / name@domain"
+                  placeholder={t('walletPlaceholder')}
                 />
                 <Button
                   type="submit"

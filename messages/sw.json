@@ -59,15 +59,15 @@
     "flowSyncActor": "Taka Sats",
     "flowSyncTitle": "Sync and check",
     "flowSyncDescription": "Saved on the phone first. When online, each record is checked and added to the ledger.",
-    "flowPayoutActor": "A second person",
-    "flowPayoutTitle": "Approve and pay",
-    "flowPayoutDescription": "The person who recorded it cannot approve it. The sats go to the collector's verified wallet.",
+    "flowPayoutActor": "Taka Sats + reviewers",
+    "flowPayoutTitle": "Check and pay",
+    "flowPayoutDescription": "Normal verified work goes to the registered wallet. Exceptions need a different staff member to review; the worker sends the sats.",
     "screenStatus": "9:41",
     "screenOffline": "Offline",
     "screenFindTitle": "Find a collector",
     "screenFindSearch": "Name, code or scan a QR",
     "screenApproved": "Approved",
-    "screenPending": "Pending approval",
+    "screenPending": "Needs review",
     "screenWeighTitle": "Weigh",
     "screenMaterial": "Material",
     "screenWeight": "Weight",
@@ -170,8 +170,8 @@
     "invalid": "Those sign-in details don’t match."
   },
   "Enrol": {
-    "title": "Enrol a collector",
-    "aliasLabel": "Their name or alias",
+    "title": "Register a recipient",
+    "aliasLabel": "Individual name or group name",
     "aliasPlaceholder": "e.g. Amina",
     "scanButton": "Scan their wallet QR",
     "issueWalletButton": "Issue a wallet",
@@ -223,7 +223,16 @@
       "none": "None of your registrations are waiting.",
       "waiting": "Waiting",
       "hint": "When a hub lead authorizes a collector they leave this list. Tap Sync data on the weigh screen to see them there."
-    }
+    },
+    "recipientType": "Who receives the payout?",
+    "individual": "Individual",
+    "collective": "Collective",
+    "collectiveHint": "One group, one registered wallet. The group decides how to share its earnings.",
+    "onlineRegistration": "Registration needs a connection. Once approved and synced, recipients can be found offline.",
+    "finishRegistration": "Finish registration",
+    "cardLater": "No card is needed to collect. After authorization, you can write and print an optional identity card.",
+    "cardsLink": "Write or print a card",
+    "walletPlaceholder": "name@wallet.example or LNURL-pay"
   },
   "Lookup": {
     "title": "Find a collector",
@@ -251,7 +260,7 @@
     "nav": {
       "sessions": "Sessions",
       "rotations": "Rotations",
-      "collectors": "Collectors",
+      "collectors": "Recipients",
       "payouts": "Payouts",
       "treasury": "Treasury",
       "reconciliation": "Reconciliation",
@@ -266,7 +275,13 @@
       "menu": "Menu",
       "label": "Operator console",
       "rates": "Rates",
-      "fieldApp": "Field app (enrol, weigh)"
+      "fieldApp": "Field app",
+      "review": "Needs review",
+      "hotWallet": "Hot wallet",
+      "cards": "Identity cards",
+      "groupWork": "Daily work",
+      "groupReview": "Checks and payments",
+      "groupProgramme": "Programme setup"
     },
     "sessions": {
       "title": "Sessions",
@@ -345,8 +360,8 @@
     "title": "Weigh",
     "loading": "Loading session…",
     "blockedTitle": "Can't start weighing",
-    "findCollectorTitle": "Find collector",
-    "searchNameCode": "Search name or code",
+    "findCollectorTitle": "Find a recipient",
+    "searchNameCode": "Name, group or public code",
     "scanQr": "Scan QR code",
     "scanQrHint": "Find collector with their code",
     "addCollector": "Add new collector",
@@ -372,7 +387,7 @@
     "guideScale": "Keep scale display readable",
     "reviewTitle": "Review & submit",
     "reviewSubtitle": "Check the details below before confirming this collection.",
-    "collector": "Collector",
+    "collector": "Recipient",
     "value": "Value",
     "equivalent": "Fiat equivalent at the collection rate",
     "indicativePayout": "Indicative payout",
@@ -411,8 +426,12 @@
     "confirm": "Confirm",
     "back": "Back",
     "savedQueued": "Saved and queued",
-    "weighAnother": "Weigh another",
-    "saveFailed": "Couldn't save. Try again."
+    "weighAnother": "Record another",
+    "saveFailed": "Couldn't save. Try again.",
+    "individual": "Individual",
+    "collective": "Collective",
+    "unitRate": "Rate",
+    "checkedLater": "The backend checks evidence and queues payment. Unusual collections go to staff review."
   },
   "SessionSummary": {
     "title": "This session",
@@ -449,7 +468,7 @@
     "step3Title": "The record is checked",
     "step3Body": "When the phone reconnects, the record is sealed so it cannot be changed quietly. The system checks the rate, the session, the supervisor and the photo, and flags anything unusual.",
     "step4Title": "The collector is paid",
-    "step4Body": "A second person approves the payment. The sats go to the collector's own wallet. Nobody chooses the destination at payout time.",
+    "step4Body": "The worker checks evidence and pays the recipient's registered wallet. Exceptions go to a different staff reviewer. Nobody chooses the destination at payout time.",
     "bitcoinTitle": "Why Bitcoin",
     "bitcoinBody": "A collector does not need a bank account, an ID document or a special app to be paid. Payments over Lightning arrive in seconds and cost very little. A wallet the collector controls cannot be frozen by us or by anyone else. And every payment can be checked by people outside the programme.",
     "openTitle": "Built on open tools",
@@ -459,7 +478,7 @@
     "honest2": "Weights come from a physical scale, with a photo as evidence.",
     "honest3": "Each record is sealed on the phone, so any edit is visible.",
     "honest4": "Repeated photos, repeated weights and unusual weights are flagged for review.",
-    "honest5": "During the pilot, every payment needs a second person's approval.",
+    "honest5": "Unreadable scale photos, mismatches and other risk signals need staff review. AI display reading does not prove the collection was genuine.",
     "honest6": "What we paid for is compared with what the recycler accepted.",
     "honest7": "The ledger can be verified by anyone, so changed records show up.",
     "protocolLink": "Read the full verification protocol",
@@ -532,16 +551,19 @@
       "storage_unconfigured": "Photo storage is not configured.",
       "ledger_key_invalid": "The ledger signing key is invalid. Ask the operator.",
       "float_unavailable": "The hot wallet balance cannot be read right now.",
-      "internal_error": "A server error occurred. Nothing was changed that we know of."
+      "internal_error": "A server error occurred. Nothing was changed that we know of.",
+      "feature_removed": "Treasury voting has been removed. Fund the operating wallet externally.",
+      "review_rejected": "This payout was rejected. It cannot be retried.",
+      "reweigh_required": "Record a new weighing with fresh evidence. The original stays in the audit trail."
     },
     "signOut": "Sign out",
     "overview": {
       "title": "Overview",
-      "intro": "What needs a person right now. Each number opens the screen where you can act on it.",
-      "pendingCollectors": "Collectors awaiting authorization",
+      "intro": "Run the day: register recipients, capture collections and handle exceptions.",
+      "pendingCollectors": "Pending recipients",
       "pendingCollectorsHint": "Registered by a supervisor, not yet vetted.",
-      "awaitingApproval": "Payouts awaiting approval",
-      "awaitingApprovalHint": "A second person must approve before the worker pays.",
+      "awaitingApproval": "Needs review",
+      "awaitingApprovalHint": "Collections needing a staff decision",
       "awaitingWallet": "Payouts waiting for a wallet",
       "awaitingWalletHint": "The collector has no verified wallet yet.",
       "failedPayouts": "Failed payouts",
@@ -558,7 +580,7 @@
       "awaitingRate": "Payouts waiting for a rate",
       "awaitingRateHint": "New collections wait here until the worker prices them. If this stays above zero, the worker or the exchange rate feed needs a look.",
       "awaitingFloat": "Payouts waiting for funds",
-      "awaitingFloatHint": "The hot wallet is too low. A confirmed treasury refill wakes them.",
+      "awaitingFloatHint": "Fund the operating wallet outside Taka Sats",
       "system": "System",
       "database": "Database",
       "up": "Up",
@@ -593,8 +615,8 @@
         "failed": "Failed",
         "awaiting_rate": "Waiting for a rate",
         "awaiting_destination": "Waiting for a wallet",
-        "pending_approval": "Needs approval",
-        "pending_float": "Waiting for float"
+        "pending_approval": "Needs review",
+        "pending_float": "Insufficient float"
       },
       "topup": {
         "proposed": "Proposed",
@@ -616,7 +638,7 @@
       }
     },
     "collectors": {
-      "title": "Collectors",
+      "title": "Recipients",
       "intro": "Authorize new collectors before they can be weighed or paid. Check the wallet before you approve.",
       "filter": "Show",
       "filters": {
@@ -631,7 +653,7 @@
       "empty": "No collectors match.",
       "emptyPending": "Nobody is waiting for authorization.",
       "col": {
-        "collector": "Collector",
+        "collector": "Recipient",
         "status": "Status",
         "wallet": "Wallet",
         "tag": "NFC tag",
@@ -688,20 +710,24 @@
       "credential": "Credential",
       "qrAlt": "QR code for {code}",
       "qrHint": "Print this for the collector. Scanning it finds them in the weigh screen. It identifies them only. It never pays anyone.",
-      "print": "Print"
+      "print": "Print",
+      "recipientType": "Recipient type",
+      "individual": "Individual",
+      "collective": "Collective",
+      "collectiveNote": "One registered group wallet receives the payout. Taka Sats does not split it between members."
     },
     "payouts": {
       "title": "Payouts",
-      "intro": "Every collection becomes a payout. A second person approves it, then the worker pays. Nobody pays by hand.",
+      "intro": "The backend checks each collection and pays eligible work. Staff review exceptions; amounts and wallets are resolved by the server.",
       "summary": "By state",
       "totalPriced": "{sats} in priced payouts",
       "filter": "State",
       "filters": {
         "all": "All",
-        "pending_approval": "Needs approval",
+        "pending_approval": "Needs review",
         "awaiting_destination": "Waiting for a wallet",
         "awaiting_rate": "Waiting for a rate",
-        "pending_float": "Waiting for float",
+        "pending_float": "Insufficient float",
         "queued": "Queued",
         "sending": "Sending",
         "paid": "Paid",
@@ -709,7 +735,7 @@
       },
       "empty": "No payouts in this state.",
       "col": {
-        "collector": "Collector",
+        "collector": "Recipient",
         "status": "State",
         "amount": "Amount",
         "created": "Created",
@@ -762,7 +788,36 @@
       "markFailed": "Mark failed (nothing was sent)",
       "resolvedPaid": "Marked paid. The ledger has the entry.",
       "resolvedFailed": "Marked failed. It is not re-queued; use Retry as a separate step.",
-      "approveConfirm": "Approve paying {name} {sats}? The worker pays it as soon as you approve. The amount may change slightly because it is priced again at a fresh rate."
+      "approveConfirm": "Approve paying {name} {sats}? The worker pays it as soon as you approve. The amount may change slightly because it is priced again at a fresh rate.",
+      "reviewTitle": "Needs review",
+      "reviewIntro": "Open the collection evidence, explain your decision, then approve, reject or request a new weighing. You cannot review your own collection.",
+      "openReview": "Review evidence",
+      "reviewReason": "Reason for your decision",
+      "reviewReasonHint": "Explain what you checked. This decision is recorded in the audit trail.",
+      "reject": "Reject payout",
+      "reweigh": "Request re-weigh",
+      "reviewFinal": "This payout was rejected or sent for re-weigh. The original record is preserved and cannot be retried.",
+      "reviewDecision": "Review decision",
+      "reviewDecisions": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "reweigh": "Re-weigh requested"
+      },
+      "reviewedBy": "Reviewed by",
+      "reviewNote": "Review note",
+      "riskReasons": "Checks requiring attention",
+      "risk": {
+        "photo_missing": "Scale photo not available",
+        "duplicate_photo": "Photo used on another collection",
+        "weight_mismatch": "Scale display and entered weight disagree",
+        "weight_outlier": "Unusual weight",
+        "gps_out_of_bounds": "Location outside the session area",
+        "evidence_pending": "Evidence check has not completed",
+        "evidence_unreadable": "Scale display could not be read confidently",
+        "payout_threshold": "Above the programme review threshold",
+        "gps_unavailable": "Location was unavailable in a session with a mapped collection area. Review the evidence.",
+        "risk_changed": "The wallet or risk evidence changed during checks. Review the latest collection evidence."
+      }
     },
     "treasury": {
       "title": "Treasury",
@@ -949,6 +1004,20 @@
         "payout_uncertain": "Payout outcome unknown",
         "off_hours": "Outside session hours",
         "rate_change_during_queue": "Rate changed while queued"
+      },
+      "scaleEvidence": "Scale photo comparison",
+      "enteredWeight": "Recorded weight",
+      "readWeight": "Read from display",
+      "notRead": "No reliable reading",
+      "evidenceResult": "Evidence result",
+      "scaleEvidenceHint": "The model checks the visible display only. It does not change recorded kilograms or prove the material, collection or location.",
+      "evidence": {
+        "pending": "Waiting for photo processing",
+        "manual": "Manual evidence, not AI verified",
+        "matched": "Display matches recorded weight",
+        "mismatch": "Weight mismatch, review required",
+        "unreadable": "Display unreadable, review required",
+        "invalid": "Photo fingerprint mismatch"
       }
     },
     "anomalies": {
@@ -1131,6 +1200,29 @@
     "mode": {
       "demo": "Demo mode. No real sats are sent.",
       "live": "Live payments. Real sats are sent."
+    },
+    "hotWallet": {
+      "title": "Hot wallet status",
+      "intro": "Operating funds for verified work. The programme treasury and recipient wallets stay outside Taka Sats.",
+      "refresh": "Refresh balance",
+      "balance": "Operating balance",
+      "pending": "Pending payouts",
+      "afterQueue": "Available after queue",
+      "unreadable": "The provider balance cannot be read. Do not assume funds are available.",
+      "insufficient": "Payouts paused: insufficient operating float",
+      "low": "Low operating balance",
+      "ready": "Operating balance covers the priced queue",
+      "coverage": "Queue coverage",
+      "pendingCount": "Waiting payouts",
+      "unpricedCount": "Not priced yet",
+      "required": "Estimated required float",
+      "threshold": "Low-balance threshold",
+      "policy": "Payout policy",
+      "riskBased": "Low-risk work pays automatically; exceptions need review",
+      "legacy": "Legacy approval rules",
+      "estimateHint": "The estimate includes only priced payouts. Unpriced work and provider fees may need additional funds.",
+      "externalTitle": "Fund externally",
+      "externalBody": "Programme stewards fund the Blink operating wallet using their own treasury process. Taka Sats does not create refill proposals, collect signatures or hold collector balances."
     }
   },
   "Sync": {
@@ -1173,7 +1265,7 @@
     "home": "About Taka Sats"
   },
   "Cards": {
-    "title": "Write a collector card",
+    "title": "Identity cards",
     "intro": "Use an Android phone with Chrome and NFC switched on. Use a blank NTAG card. The card only carries the collector's code. It cannot hold or spend money.",
     "searchLabel": "Find the collector (name or code)",
     "searchPlaceholder": "Start typing a name or code",
@@ -1188,10 +1280,23 @@
     "readEmpty": "nothing",
     "readUnlinked": "nobody yet",
     "loadFailed": "Could not load that collector. Try again.",
-    "writeFailed": "Could not write the card. Hold it steady against the back of the phone and try again.",
+    "writeFailed": "Could not write and verify the card. Use a blank card, hold it steady, then present that same card for read-back. Existing cards will not be overwritten.",
     "readFailed": "Could not read the card. Try again.",
-    "linkFailed": "The card was written but could not be linked to the collector. Try again.",
+    "linkFailed": "The card is written but not linked yet. Use “Link a written card” with this same recipient before handing it out.",
     "cardTaken": "That card is already linked to someone else. Use a different card.",
-    "unavailable": "This phone or browser cannot use NFC. Use Chrome on an Android phone."
+    "unavailable": "NFC needs Chrome on an Android phone with NFC enabled. You can still find a recipient and print their QR here.",
+    "stepPick": "Find an approved individual or collective.",
+    "stepWrite": "On Android Chrome, write a blank NFC card. Hold it again to verify the saved identity.",
+    "stepPrint": "Print the identity and QR at actual size, then check both NFC and QR before handing over the card.",
+    "identityOnly": "Identity only",
+    "cardSafety": "This card identifies recycling work. It does not hold or spend money.",
+    "cardFooter": "No smartphone needed. Keep your wallet recovery words private.",
+    "printHint": "CR80 card: 85.6 × 53.98 mm. Print at 100% with headers off. Choose landscape and your printer’s card media. NFC writing is separate from printing.",
+    "cancel": "Cancel scan",
+    "readVerified": "Card identity matches its linked recipient.",
+    "readMismatch": "Identity is unlinked or does not match. Do not hand this card out yet.",
+    "linkWritten": "Link a written card",
+    "linkConfirm": "Link this identity card to the selected recipient",
+    "linkMismatch": "That card carries another identity. Choose the matching recipient or use a new blank card."
   }
 }

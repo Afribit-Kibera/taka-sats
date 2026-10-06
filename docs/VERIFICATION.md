@@ -8,6 +8,15 @@ partner organisations. Developers will find the exact behaviour in
 
 ## The principle
 
+### Current scale-display audit (2026-10-06)
+
+Configured OpenRouter/Mistral reads the private scale photo without being told the entered kg.
+The server validates the structured reading and compares within configured tolerance. `matched` means
+only that display reading agrees; `mismatch`/`unreadable` require review and `invalid` hashes cannot pay.
+Recorded kg and signed payload stay unchanged; this does not establish material type or complete V1
+verification. Default auto-pay requires OCR. Provider `none` honestly remains manual evidence.
+Synthetic displays tested connectivity; real scales still need representative-image calibration.
+
 **A physical measurement is the authority. Evidence supports it. Software flags what looks
 wrong. People decide. The record cannot be quietly edited. The real world is the final check.**
 

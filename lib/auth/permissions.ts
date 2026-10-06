@@ -43,6 +43,7 @@ export const SCOPES = [
   'treasury:approve', // approve or reject a refill proposed by someone else, and check that the funds arrived (ADR-0020)
   'anomaly:review', // review/resolve anomaly flags
   'reconciliation:write', // enter recycler sales and run reconciliation reports (admin; §10.2)
+  'reconciliation:read', // operational aggregate read for hub leads and admins
   'session:metrics:read:own', // live metrics for your own sessions
   'session:metrics:read:all', // live metrics for every session
   'session:metrics:read:sponsored', // live metrics for sessions you sponsor
@@ -70,7 +71,13 @@ const supervisorScopes = [
 /** The one source of truth for what each role may do. */
 export const ROLE_SCOPES: Readonly<Record<Role, readonly Scope[]>> = Object.freeze({
   supervisor: supervisorScopes,
-  hub_lead: [...supervisorScopes, 'collector:authorize', 'payout:approve'],
+  hub_lead: [
+    ...supervisorScopes,
+    'collector:authorize',
+    'payout:approve',
+    'treasury:read',
+    'reconciliation:read',
+  ],
   admin: [
     'collector:enrol',
     'collector:authorize',
@@ -89,6 +96,7 @@ export const ROLE_SCOPES: Readonly<Record<Role, readonly Scope[]>> = Object.free
     'treasury:approve',
     'anomaly:review',
     'reconciliation:write',
+    'reconciliation:read',
     'session:metrics:read:all',
     'report:generate:all',
     'apikey:manage',

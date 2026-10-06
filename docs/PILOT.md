@@ -1,5 +1,11 @@
 # Pilot runbook
 
+> Current policy (2026-10-06): field-first risk-based payments and external treasury supersede the old
+> universal approval/funding-vote steps in this runbook. Read [ADR-0021](adr/0021-field-first-risk-based-payments.md)
+> and [BACKEND.md](BACKEND.md) first. `pilot:smoke` on a live rail requires owner-supervised `--pay-real`
+> before any write, since sync may auto-pay. Run automated write tests only with disposable DB/storage
+> and fake payments. Real-scale OCR calibration and NFC on the actual Android phone remain field tests.
+
 How to stand up the Taka Sats pilot, prove it works before any collector arrives, run a field
 day, and show it to someone. Written for the person doing it, not for a developer: every step is a
 command or a thing to look at. Companion docs: `docs/SELF_HOSTING.md` (the stack),

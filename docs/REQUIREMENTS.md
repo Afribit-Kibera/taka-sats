@@ -14,6 +14,23 @@
 
 ## 0. How to use this document
 
+### Current implementation override (2026-10-06, D-29)
+
+[ADR-0021](adr/0021-field-first-risk-based-payments.md) and [BACKEND.md](BACKEND.md) supersede the
+older universal payment-approval and in-app treasury-vote sections below. The field flow is identify,
+material, physical kg, mandatory photo, offline save. Individual and collective recipients share the
+existing identity/gate; collectives receive one payment to one wallet. Risk-based worker payment requires
+evidence and completed checks; a distinct hub lead/admin reviews exceptions with a reason. No human
+payment execution scope is granted. Funding/governance are external, old funding mutations return 410,
+and ledger history remains intact. Hub leads gain operating-wallet/live mass-balance read only, not
+staff/rate writes, anomaly verdicts or uncertain-payment resolution. Scale OCR via OpenRouter/Mistral is
+derived evidence, never signed weight or complete V1 proof. NFC contains identity only.
+
+New config is `[payouts] approval_mode/review_threshold_fiat_minor` and `[verification] provider/model/
+timeout_ms/max_tokens/min_confidence/ocr_required_for_autopay/weight_tolerance_kg/max_autopay_weight_kg`.
+Defaults/limits are in [CONFIGURATION.md](CONFIGURATION.md). Unreadable manual evidence cannot auto-pay
+by default; an operator can deliberately choose the documented V0 policy.
+
 This is the single reference an engineer or an outside contributor reads to understand **what v1 must do, how the pieces fit, and which decisions are already settled**. It does not replace the source documents in `Initial assets/` - it consolidates them, resolves the open questions that blocked a build, and adds the implementation-level detail (API surface, data model deltas, ledger spec, auth model) those documents deferred.
 
 Every requirement here traces to a PRD functional requirement (`FR-x.y`) or user story (`US-x.y`). Where this document changes something in a source document, it is called out explicitly in **§4 Proposed updates to the source documents** - the source documents remain authoritative until those edits land.
