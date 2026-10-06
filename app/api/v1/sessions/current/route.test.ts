@@ -21,11 +21,11 @@ const session = (id: string, role: string): Session => ({
 describe('/api/v1/sessions/current — auth (no DB)', () => {
   it('401 without a session', async () => {
     authMock.mockResolvedValue(null);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(401);
   });
   it('403 for a partner (partners do not act)', async () => {
     authMock.mockResolvedValue(session('p', 'partner'));
-    expect((await GET()).status).toBe(403);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(403);
   });
 });
 
@@ -58,10 +58,12 @@ describe.skipIf(!hasDatabase)('/api/v1/sessions/current — integration', () => 
       supervisorIds: [sup!.id],
     });
 
-    expect((await (await GET()).json()).session).toBeNull();
+    expect(
+      (await (await GET(new Request('https://example.test/api/v1/test'))).json()).session,
+    ).toBeNull();
 
     await patchSession(db, s.id, { status: 'active' });
-    const body = await (await GET()).json();
+    const body = await (await GET(new Request('https://example.test/api/v1/test'))).json();
     expect(body.session.id).toBe(s.id);
     expect(body.session.location).toBe('Kibera Hub');
   });

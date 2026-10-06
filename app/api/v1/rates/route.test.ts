@@ -26,12 +26,12 @@ const postRequest = (body: unknown) =>
 describe('/api/v1/rates — auth (no DB)', () => {
   it('GET 401 without a session', async () => {
     authMock.mockResolvedValue(null);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(401);
   });
   it('GET 200 for a supervisor (rates:read)', async () => {
     authMock.mockResolvedValue(sessionFor('supervisor'));
     // no DB → this will 500 on getDb(); assert it at least passed the scope gate
-    const res = await GET();
+    const res = await GET(new Request('https://example.test/api/v1/test'));
     expect([200, 500]).toContain(res.status);
   });
   it('POST 403 for a supervisor (needs session:configure)', async () => {
@@ -57,7 +57,7 @@ describe.skipIf(!hasDatabase)('/api/v1/rates — integration', () => {
     expect(created.status).toBe(201);
 
     authMock.mockResolvedValue(sessionFor('supervisor'));
-    const body = await (await GET()).json();
+    const body = await (await GET(new Request('https://example.test/api/v1/test'))).json();
     expect(body.rates).toHaveLength(1);
     expect(Number(body.rates[0].rateFiatMinor)).toBe(2200);
   });

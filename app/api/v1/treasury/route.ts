@@ -14,7 +14,7 @@ import { getDb } from '@/lib/db/client';
 import { getOperatingWallet } from '@/lib/treasury/operating';
 import { hotWallet } from '@/lib/treasury/provider';
 
-export async function GET(request?: Request): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     await requireScope('treasury:read', request);
     return NextResponse.json(await getOperatingWallet(getDb(), hotWallet));

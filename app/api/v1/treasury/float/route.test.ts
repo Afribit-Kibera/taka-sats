@@ -28,10 +28,10 @@ describe('GET /api/v1/treasury/float', () => {
 
   it('401 without a session; 403 for everyone but an admin', async () => {
     authMock.mockResolvedValue(null);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(401);
     for (const role of ['supervisor', 'hub_lead', 'partner']) {
       authMock.mockResolvedValue(session(role));
-      expect((await GET()).status).toBe(403);
+      expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(403);
     }
   });
 
@@ -40,7 +40,7 @@ describe('GET /api/v1/treasury/float', () => {
     const asOf = new Date('2026-06-10T10:00:00.000Z');
 
     provider(async () => ({ available: sats(150_000), asOf }));
-    const low = await GET();
+    const low = await GET(new Request('https://example.test/api/v1/test'));
     expect(low.status).toBe(200);
     expect(await low.json()).toEqual({
       available: 150_000,
@@ -49,7 +49,13 @@ describe('GET /api/v1/treasury/float', () => {
     });
 
     provider(async () => ({ available: sats(5_000_000), asOf }));
-    expect(((await (await GET()).json()) as { lowBalance: boolean }).lowBalance).toBe(false);
+    expect(
+      (
+        (await (await GET(new Request('https://example.test/api/v1/test'))).json()) as {
+          lowBalance: boolean;
+        }
+      ).lowBalance,
+    ).toBe(false);
   });
 
   it('503 float_unavailable when the rail cannot be read — without leaking why', async () => {
@@ -57,7 +63,7 @@ describe('GET /api/v1/treasury/float', () => {
     provider(async () => {
       throw new Error('BLINK_API_KEY=secret-value rejected');
     });
-    const response = await GET();
+    const response = await GET(new Request('https://example.test/api/v1/test'));
     expect(response.status).toBe(503);
     const text = await response.text();
     expect(text).toContain('float_unavailable');
@@ -69,6 +75,6 @@ describe('GET /api/v1/treasury/float', () => {
     vi.mocked(getLightningProvider).mockImplementation(() => {
       throw new Error('misconfigured');
     });
-    expect((await GET()).status).toBe(503);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(503);
   });
 });

@@ -21,11 +21,11 @@ const session = (id: string, role: string): Session => ({
 describe('/api/v1/weigh/bootstrap — auth (no DB)', () => {
   it('401 without a session', async () => {
     authMock.mockResolvedValue(null);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(401);
   });
   it('403 for a partner (no collection:record)', async () => {
     authMock.mockResolvedValue(session('p', 'partner'));
-    expect((await GET()).status).toBe(403);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(403);
   });
 });
 
@@ -51,7 +51,7 @@ describe.skipIf(!hasDatabase)('/api/v1/weigh/bootstrap — integration', () => {
       .returning({ id: supervisors.id });
     authMock.mockResolvedValue(session(sup!.id, 'supervisor'));
 
-    const res = await GET();
+    const res = await GET(new Request('https://example.test/api/v1/test'));
     expect(res.status).toBe(403);
     expect((await res.json()).error.code).toBe('no_active_session');
   });
@@ -90,7 +90,7 @@ describe.skipIf(!hasDatabase)('/api/v1/weigh/bootstrap — integration', () => {
     await patchSession(db, created.id, { status: 'active' });
 
     authMock.mockResolvedValue(session(sup!.id, 'supervisor'));
-    const body = await (await GET()).json();
+    const body = await (await GET(new Request('https://example.test/api/v1/test'))).json();
 
     expect(body.session).toMatchObject({ sessionId: created.id, location: 'Kibera Hub' });
     expect(body.rates).toEqual([

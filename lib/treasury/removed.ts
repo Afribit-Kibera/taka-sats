@@ -4,7 +4,7 @@ import { errorResponse } from '@/lib/api/errors';
 import { requireScope } from '@/lib/auth/session';
 
 /** Retired routes remain authenticated, but cannot change historical funding records. */
-export async function treasuryWorkflowRemoved(request?: Request): Promise<NextResponse> {
+export async function treasuryWorkflowRemoved(request: Request): Promise<NextResponse> {
   try {
     await requireScope('treasury:read', request);
     return NextResponse.json(

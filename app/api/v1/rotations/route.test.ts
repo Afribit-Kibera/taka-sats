@@ -28,7 +28,7 @@ const postRequest = (body: unknown) =>
 describe('/api/v1/rotations — auth (no DB)', () => {
   it('GET 401 without a session', async () => {
     authMock.mockResolvedValue(null);
-    expect((await GET()).status).toBe(401);
+    expect((await GET(new Request('https://example.test/api/v1/test'))).status).toBe(401);
   });
   it('POST 403 for a supervisor (needs session:configure)', async () => {
     authMock.mockResolvedValue(session('supervisor'));
@@ -69,7 +69,7 @@ describe.skipIf(!hasDatabase)('/api/v1/rotations — integration', () => {
     expect(created.status).toBe(201);
     const { rotation } = await created.json();
 
-    const listed = await (await GET()).json();
+    const listed = await (await GET(new Request('https://example.test/api/v1/test'))).json();
     expect(listed.rotations).toHaveLength(1);
     expect(listed.rotations[0].supervisorName).toBe('Brian');
 
@@ -77,7 +77,9 @@ describe.skipIf(!hasDatabase)('/api/v1/rotations — integration', () => {
       params: Promise.resolve({ id: rotation.id }),
     });
     expect(del.status).toBe(204);
-    expect((await (await GET()).json()).rotations).toHaveLength(0);
+    expect(
+      (await (await GET(new Request('https://example.test/api/v1/test'))).json()).rotations,
+    ).toHaveLength(0);
   });
 
   it('422 when the window is backwards', async () => {

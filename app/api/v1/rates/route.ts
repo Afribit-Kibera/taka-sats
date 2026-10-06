@@ -19,7 +19,7 @@ const bodySchema = z.object({
   effectiveFrom: z.coerce.date().optional(),
 });
 
-export async function GET(request?: Request): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     await requireScope('rates:read', request);
     return NextResponse.json({ rates: await currentRates(getDb()) });

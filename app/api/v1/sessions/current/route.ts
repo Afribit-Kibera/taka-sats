@@ -13,7 +13,7 @@ import { requireScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
 import { currentSessionForSupervisor } from '@/lib/sessions';
 
-export async function GET(request?: Request): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     const actor = await requireScope('session:read', request);
     const session = await currentSessionForSupervisor(getDb(), actor.id);

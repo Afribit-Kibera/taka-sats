@@ -13,7 +13,7 @@ import { requireScope } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
 import { createRotation, createRotationInputSchema, listRotations } from '@/lib/rotations';
 
-export async function GET(request?: Request): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     await requireScope('session:configure', request);
     return NextResponse.json({ rotations: await listRotations(getDb()) });

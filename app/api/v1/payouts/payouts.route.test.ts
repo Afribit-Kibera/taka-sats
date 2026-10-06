@@ -55,7 +55,7 @@ describe('/api/v1/payouts — auth (no DB)', () => {
   it('401 without a session', async () => {
     authMock.mockResolvedValue(null);
     expect((await LIST(get(''))).status).toBe(401);
-    expect((await SUMMARY()).status).toBe(401);
+    expect((await SUMMARY(new Request('https://example.test/api/v1/test'))).status).toBe(401);
     expect((await DETAIL(get(`/${UNKNOWN}`), idParams(UNKNOWN))).status).toBe(401);
     expect((await APPROVE(post(`/${UNKNOWN}/approve`), idParams(UNKNOWN))).status).toBe(401);
     expect((await RETRY(post(`/${UNKNOWN}/retry`), idParams(UNKNOWN))).status).toBe(401);
@@ -93,7 +93,7 @@ describe('/api/v1/payouts — auth (no DB)', () => {
   it('403 for a partner everywhere', async () => {
     authMock.mockResolvedValue(session('p', 'partner'));
     expect((await LIST(get(''))).status).toBe(403);
-    expect((await SUMMARY()).status).toBe(403);
+    expect((await SUMMARY(new Request('https://example.test/api/v1/test'))).status).toBe(403);
     expect((await DETAIL(get(`/${UNKNOWN}`), idParams(UNKNOWN))).status).toBe(403);
     expect((await APPROVE(post(`/${UNKNOWN}/approve`), idParams(UNKNOWN))).status).toBe(403);
   });
@@ -305,7 +305,7 @@ describe.skipIf(!hasDatabase)('/api/v1/payouts — integration', () => {
 
   describe('GET /payouts/summary', () => {
     it('counts and sums every status, zero-filled', async () => {
-      const body = await json(await SUMMARY());
+      const body = await json(await SUMMARY(new Request('https://example.test/api/v1/test')));
       const by = Object.fromEntries(
         body.byStatus.map((r: { status: string }) => [r.status, r]),
       ) as Record<string, { count: number; totalSats: number }>;
@@ -322,7 +322,9 @@ describe.skipIf(!hasDatabase)('/api/v1/payouts — integration', () => {
 
     it('is scoped to the supervisor’s own events', async () => {
       authMock.mockResolvedValue(session(world.otherSupervisorId, 'supervisor'));
-      expect((await json(await SUMMARY())).total).toEqual({ count: 1, totalSats: 1000 });
+      expect(
+        (await json(await SUMMARY(new Request('https://example.test/api/v1/test')))).total,
+      ).toEqual({ count: 1, totalSats: 1000 });
     });
   });
 

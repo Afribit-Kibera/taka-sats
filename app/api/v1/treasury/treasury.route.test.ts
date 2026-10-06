@@ -14,7 +14,7 @@ const mutations = [PROPOSE, SIGNOFF, TRANSFER, CANCEL, REJECT, CONFIRM];
 describe('external treasury: historical governance cannot mutate through any route', () => {
   it.each(mutations)('denies anonymous requests', async (call) => {
     authMock.mockResolvedValue(null);
-    expect((await call()).status).toBe(401);
+    expect((await call(new Request('https://example.test/api/v1/treasury'))).status).toBe(401);
   });
   it.each(mutations)('denies field supervisors and partners', async (call) => {
     for (const role of ['supervisor', 'partner'] as const) {
@@ -22,7 +22,7 @@ describe('external treasury: historical governance cannot mutate through any rou
         user: { id: 'example', role, locale: 'en' },
         expires: '2099-01-01',
       });
-      expect((await call()).status).toBe(403);
+      expect((await call(new Request('https://example.test/api/v1/treasury'))).status).toBe(403);
     }
   });
   it.each(mutations)('returns 410 to staff without database access', async (call) => {
@@ -31,7 +31,7 @@ describe('external treasury: historical governance cannot mutate through any rou
         user: { id: 'example', role, locale: 'en' },
         expires: '2099-01-01',
       });
-      const response = await call();
+      const response = await call(new Request('https://example.test/api/v1/treasury'));
       expect(response.status).toBe(410);
       expect((await response.json()).error.code).toBe('feature_removed');
     }
