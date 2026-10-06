@@ -8,6 +8,24 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **Scoped API keys for existing dashboards.** Administrator-session issuance, mandatory expiry,
+  immediate revocation, hash-only storage and permissions intersected with the owner's current role.
+  Keys cannot manage other keys or execute payouts. See `docs/API_INTEGRATION.md`.
+- **Field-first collection.** Individual or collective recipients, scale-photo OCR through OpenRouter,
+  risk-based automatic payouts and independent exception review. OCR records derived evidence without
+  changing the recorded weight or signed event. Real-scale calibration is still required.
+- **Supervisor card issuance.** Pending collectors can receive an identity-only NFC card without
+  activating collection or payment access. Card read-back and API mapping have browser test coverage;
+  real NFC hardware remains to be tested.
+
+### Changed
+
+- The operating-wallet API is read-only and shows queued liabilities. Funding happens externally;
+  historical treasury records remain readable, but in-app funding mutation routes return 410.
+- Live-rail smoke tests now require supervised `--pay-real` before creating any collection work.
+
+### Earlier additions
+
 - **CI that does not depend on GitHub Actions.** `pnpm ci:local` (`scripts/ci/run.sh`) runs every
   check in order (install, format, lint, types, design rules, licence headers, commit sign off,
   commit messages, build, tests with a throwaway Postgres container, migrations), with optional

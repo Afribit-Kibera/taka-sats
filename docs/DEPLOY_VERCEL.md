@@ -2,7 +2,7 @@
 
 ## Field-first release checks (2026-10-06)
 
-The stateful VM must run migration 0013 via the tools service, with a verified pre-migration database
+The stateful VM must run migrations 0013 and 0014 via the tools service, with a verified pre-migration database
 backup. Build authenticated assets with `TAKASATS_ASSET_PREFIX=/_vm`, preserving the canonical frontend
 proxy. Configure `OPENROUTER_API_KEY` only on the backend and explicitly set verification provider/model,
 required OCR and risk-based review threshold. Old sats-threshold 0 does not hold risk-mode work; choose
@@ -15,6 +15,11 @@ collections or approving money. Invalid OCR holds for review; enabling a provide
 scale accuracy. Roll back to the saved image/release/environment if health, login, proxy assets or worker
 startup fail. The additive migration can remain while the old image runs; do not revert after new records
 without reviewing data loss from removing derived evidence/review fields.
+
+Migration 0014 adds hash-only staff API keys. Verify creation from an administrator session,
+scope denial, expiry and revocation using an isolated test database first. For a production probe,
+create only a short-lived read-only key, keep its token out of logs, and revoke it after checking.
+Do not use a key to create collections or approve payouts as part of a routine deployment check.
 
 The Vercel path runs the same Next.js project as Docker Compose. Neon supplies PostgreSQL and Cloudflare R2 supplies object storage when those features land.
 
@@ -53,7 +58,7 @@ vercel link --project taka-sats --scope novyrix-teams
 vercel deploy --prod --scope novyrix-teams
 ```
 
-The canonical production URL is `https://taka-sats.vercel.app`.
+The canonical production URL is `https://taka.afribit.africa`; `taka-sats.vercel.app` is a deployment alias.
 
 ## Git deployments
 

@@ -65,8 +65,8 @@ The database retains only its SHA-256 hash and short identification prefix. List
 return metadata, never the token or hash.
 
 Your dashboard backend sends `Authorization: Bearer <token>` to `/api/v1`. Every request intersects
-the key scopes with its owner's current role. Expired/revoked keys and inactive owners return401;
-missing grants return403. Demotion removes permissions on the next request. Invalid bearer headers
+the key scopes with its owner's current role. Expired/revoked keys and inactive owners return 401;
+missing grants return 403. Demotion removes permissions on the next request. Invalid bearer headers
 never fall back to an accompanying valid cookie. `payout:execute` and `apikey:manage` cannot be
 delegated. Different keys belonging to one person do not create independent reviewers.
 
@@ -119,4 +119,5 @@ not failed; never blindly retry a payment whose outcome is unknown.
 
 The bundled console is an existing optional reference client. Its presence is not a requirement to
 build or maintain a second administrator dashboard. A machine-readable OpenAPI specification and
-authenticated external-dashboard integration tests remain to be completed.
+integration with your particular external dashboard remains to be completed. The API-key HTTP
+lifecycle and scope-denial paths have automated integration coverage.
