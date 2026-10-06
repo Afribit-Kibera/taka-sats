@@ -54,13 +54,12 @@ https, so a desktop computer cannot write cards.
 
 **IP67/IP68-rated** (FR-1.5) in one of two shapes, both wearable on a lanyard:
 
-- **PVC card**, credit-card proportions (85.6 × 54 mm) - matches the delivered card art
-  (`Initial assets/Taka_Sats_NFC_Tag_Front.png` / `..._Back.png`). Front carries the brand
-  mark and the collector's tap affordance; the back states, in plain language, that the tag
-  can only *receive* funds and carries no spend risk if lost (Brand Guidelines §-, PRD
-  FR-1.1). This is a UX and trust decision, not just a design one - don't reword it away.
+- **PVC card**, CR80 proportions (85.6 × 53.98 mm). Front carries the brand, collector alias,
+  public code and identity QR. The back states that the card identifies its holder but cannot
+  hold or spend money. Use the current printable identity layout, not older artwork containing
+  a wallet link. Losing the card does not expose the collector's wallet keys.
 - **ABS keyfob** - an alternative for collectors who prefer it clipped to a bag or belt
-  rather than carried as a card. Same chip, same back-of-tag language, adapted to the
+  rather than carried as a card. Same chip and identity-only warning, adapted to the
   keyfob's printable area.
 
 Both need a lanyard/keyring attachment point molded in, not glued on - glued attachments
@@ -75,7 +74,7 @@ are the first thing to fail in the field.
 - [ ] Order a small pilot batch (10-20) before a bulk order; run the durability test below
       on that batch first.
 - [ ] Confirm the supplier can pre-print the delivered card art (front) and the back-face
-      receive-only text, or that in-house printing/lamination is arranged.
+      identity-only warning, or that a print shop or in-house printing/lamination is arranged.
 - [ ] Confirm write compatibility with the Web NFC devices supervisors actually carry (gate
       **G2** - tracked separately from procurement).
 

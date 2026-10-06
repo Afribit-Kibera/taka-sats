@@ -51,9 +51,9 @@ available).
 - **Weight is entered by hand today.** The record says so (`weight source: manual`). Support
   for connected scales is designed and the field already exists, so a scale reading can be
   recorded as such later without changing the record format.
-- Reading the scale display from the photo automatically (OCR) is **Planned**. It will run in
-  a "measure only" mode first, so we learn how accurate it is before it is allowed to flag
-  anything.
+- Reading the scale display from the photo (OCR) is **Built, with limits** when OpenRouter is
+  configured. It records a separate comparison; it never changes the entered weight. Ambiguous
+  or mismatched readings go to review. Synthetic tests do not establish real-scale accuracy.
 
 ### 3. Sealing the record (Built)
 
