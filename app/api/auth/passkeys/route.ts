@@ -107,21 +107,23 @@ export async function POST(request: Request) {
     }
     const text = Buffer.concat(chunks).toString('utf8');
     const body = bodySchema.parse(JSON.parse(text));
-    const db = getDb();
-    if (body.action.endsWith('options')) spendOptionsBudget();
     if (body.action === 'register-options') {
-      const result = await registrationOptions(db, await signedInStaff(request));
+      const staff = await signedInStaff(request);
+      spendOptionsBudget();
+      const result = await registrationOptions(getDb(), staff);
       return withSecret(result.options, 'ceremony', result.nonce);
     }
     if (body.action === 'login-options') {
-      const result = await authenticationOptions(db);
+      spendOptionsBudget();
+      const result = await authenticationOptions(getDb());
       return withSecret(result.options, 'ceremony', result.nonce);
     }
     const nonce = readPasskeyCookie(request, 'ceremony');
+    const staff = body.action === 'register-verify' ? await signedInStaff(request) : null;
     const ticket =
       body.action === 'register-verify'
-        ? await verifyRegistration(db, await signedInStaff(request), nonce, body.response)
-        : await verifyAuthentication(db, nonce, body.response);
+        ? await verifyRegistration(getDb(), staff!, nonce, body.response)
+        : await verifyAuthentication(getDb(), nonce, body.response);
     return withSecret({ ok: true }, 'ticket', ticket);
   } catch (error) {
     const known = error instanceof PasskeyError;

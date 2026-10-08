@@ -47,6 +47,8 @@ const PUBLIC: Readonly<Record<string, string>> = {
   './v1/meta/route.ts': 'deployment facts, no personal data',
   './v1/stats/summary/route.ts': 'privacy-filtered public counters',
   './auth/[...nextauth]/route.ts': 'Auth.js sign-in endpoints',
+  './auth/passkeys/route.ts':
+    'WebAuthn login options and verified login; registration/status require staff cookie',
 };
 
 /** Guarded by something other than a session; must still refuse an anonymous caller. */
@@ -74,6 +76,27 @@ function requestFor(path: string, method: string): NextRequest {
 }
 
 describe('every API route refuses an anonymous caller', () => {
+  it('passkey status and enrollment require a staff cookie, even though discoverable sign-in is public', async () => {
+    const loaded = await routes['./auth/passkeys/route.ts']!();
+    expect(
+      (
+        await (loaded.GET as Handler)(requestFor('./auth/passkeys/route.ts', 'GET'), {
+          params: Promise.resolve({}),
+        })
+      ).status,
+    ).toBe(401);
+    const { passkeyOrigin } = await import('@/lib/auth/passkeys');
+    for (const action of ['register-options', 'register-verify']) {
+      const request = new NextRequest(`${passkeyOrigin()}/api/auth/passkeys`, {
+        method: 'POST',
+        headers: { origin: passkeyOrigin(), 'content-type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      expect(
+        (await (loaded.POST as Handler)(request, { params: Promise.resolve({}) })).status,
+      ).toBe(401);
+    }
+  });
   const entries = Object.entries(routes);
 
   it('finds the routes (the glob did not silently match nothing)', () => {
