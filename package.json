@@ -43,10 +43,13 @@
     "commitlint": "commitlint",
     "ci:local": "bash scripts/ci/run.sh",
     "ci:receiver:test": "node --test ci/receiver/receiver.test.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "staff:reset-phone": "tsx scripts/reset-staff-phone.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.0.3",
     "@zxing/browser": "^0.2.1",
     "@zxing/library": "^0.23.0",
     "bech32": "^2.0.0",

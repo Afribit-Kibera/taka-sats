@@ -55,6 +55,8 @@ export async function getActor(request?: Request): Promise<Actor | null> {
   if (!session?.user) {
     return null;
   }
+  // An operator-issued bootstrap/recovery password grants phone enrollment only.
+  if (session.user.phoneSetupRequired) return null;
   const role = session.user.role;
   return { kind: role === 'partner' ? 'partner' : 'supervisor', id: session.user.id, role };
 }

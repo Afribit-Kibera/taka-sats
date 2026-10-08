@@ -8,6 +8,8 @@ import { BottomNav } from '@/components/supervisor/BottomNav';
 import { SyncManager } from '@/components/supervisor/SyncManager';
 import { SetupLink } from '@/components/supervisor/InstallCard';
 import { isRole, roleHasScope } from '@/lib/auth/permissions';
+import { DeviceSetup } from '@/components/supervisor/DeviceSetup';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * Supervisor PWA shell (DESIGN §5.1 — thumb-first single column). Every route
@@ -20,13 +22,24 @@ export default async function SupervisorLayout({ children }: { readonly children
     redirect('/login');
   }
 
+  const t = await getTranslations('FieldSetup');
+  const needsSecurity = session?.user.phoneSetupRequired;
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-[0_0_50px_rgb(20_20_20/0.08)]">
       <ModeBanner />
       <SetupLink />
-      <SyncManager />
-      <main className="flex-1">{children}</main>
-      <BottomNav />
+      {!needsSecurity ? <SyncManager /> : null}
+      <main className="flex-1">
+        {needsSecurity ? (
+          <div className="space-y-5 p-5">
+            <h1 className="font-display text-2xl font-bold">{t('title')}</h1>
+            <DeviceSetup securityRequired />
+          </div>
+        ) : (
+          children
+        )}
+      </main>
+      {!needsSecurity ? <BottomNav /> : null}
     </div>
   );
 }

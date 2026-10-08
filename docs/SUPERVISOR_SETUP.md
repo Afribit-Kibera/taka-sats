@@ -2,8 +2,18 @@
 
 Open **https://taka.afribit.africa/install** in Chrome on an NFC-capable Android phone. Avoid in-app
 browsers. Tap **Install app** if offered, or Chrome's menu → **Install app / Add to Home screen**.
-Open the home-screen icon and sign in with your private staff code/password. The installed app starts
+Open the home-screen icon and sign in once with your private staff code/setup phrase. The installed app starts
 at `/setup`. Installation acceptance and actually running the installed app are separate statuses.
+
+Enable an Android screen lock (PIN, fingerprint or face unlock), then tap **Set up phone security** and
+approve Chrome's native passkey prompt. Operator-issued setup phrases expire after seven days and grant
+phone setup only. Successful enrollment disables the phrase and replaces the password session. On later
+visits choose **Sign in with phone security**; the phone selects your account without typing a staff code.
+Use this same installation domain each time. Passkeys may sync through the phone's password manager.
+The app never receives your phone PIN or biometrics. An existing session remains signed in for up to
+30 days, including offline work; phone verification is requested at sign-in, rather than every collection.
+For a lost phone or unavailable passkey, the administrator revokes its access and issues a new phrase
+using the operator-only procedure in [phone access](PHONE_ACCESS.md). Reconnect before signing in.
 
 Tap **Allow Camera**, **Allow Location** and **Allow NFC**. Enable Android Location/NFC too. Camera is
 used for QR scans and evidence; location is recorded with collections; NFC reads/writes identities.

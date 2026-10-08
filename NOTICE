@@ -25,3 +25,10 @@ Contributions are accepted under the Developer Certificate of Origin
 
 Third-party components are listed with their licences in package.json and
 pnpm-lock.yaml; all runtime dependencies are AGPL-3.0 compatible.
+
+lib/auth/bootstrap-words.json contains EFF's Short Wordlist #1 by Joseph
+Bonneau / Electronic Frontier Foundation (2016), reformatted as JSON with
+dice indices removed. Licensed under CC BY 3.0 US:
+https://creativecommons.org/licenses/by/3.0/us/
+Source: https://www.eff.org/files/2016/09/08/eff_short_wordlist_1.txt
+Attribution and copyright policy: https://www.eff.org/copyright

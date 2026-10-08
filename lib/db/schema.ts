@@ -162,6 +162,9 @@ export const supervisors = pgTable(
     role: text('role').notNull().default('supervisor'),
     /** `scrypt` hash, `salt:hash` hex (lib/auth/password.ts). Never logged. */
     passwordHash: text('password_hash').notNull(),
+    passwordLoginDisabled: boolean('password_login_disabled').notNull().default(false),
+    bootstrapPasswordExpiresAt: timestamp('bootstrap_password_expires_at', { withTimezone: true }),
+    authEpoch: integer('auth_epoch').notNull().default(0),
     locale: text('locale').notNull().default('en'),
     active: boolean('active').notNull().default(true),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
@@ -170,6 +173,36 @@ export const supervisors = pgTable(
     check('supervisors_role_check', sql`${table.role} in ('supervisor', 'hub_lead', 'admin')`),
   ],
 );
+
+/** Public passkey material only; the phone retains its private key and screen-lock secrets. */
+export const staffPasskeys = pgTable(
+  'staff_passkeys',
+  {
+    credentialId: text('credential_id').primaryKey(),
+    supervisorId: uuid('supervisor_id')
+      .notNull()
+      .references(() => supervisors.id, { onDelete: 'cascade' }),
+    publicKey: text('public_key').notNull(),
+    counter: bigint('counter', { mode: 'number' }).notNull(),
+    transports: jsonb('transports').$type<string[]>().notNull().default([]),
+    deviceType: text('device_type').notNull(),
+    backedUp: boolean('backed_up').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('staff_passkeys_supervisor_idx').on(t.supervisorId)],
+);
+
+/** Expiring, one-use browser ceremonies and HttpOnly sign-in proofs. */
+export const staffAuthChallenges = pgTable('staff_auth_challenges', {
+  nonceHash: text('nonce_hash').primaryKey(),
+  kind: text('kind').notNull(),
+  challenge: text('challenge').notNull(),
+  supervisorId: uuid('supervisor_id').references(() => supervisors.id, { onDelete: 'cascade' }),
+  authEpoch: integer('auth_epoch'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
 
 /**
  * The anomaly types a flag may carry. Detectors and the revoked-tap handler WRITE these; a

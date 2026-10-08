@@ -22,6 +22,7 @@ import { isRole, type Role } from '@/lib/auth/permissions';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { type AccountLookup, refreshSessionToken } from '@/lib/auth/live-account';
 import { LoginThrottle } from '@/lib/auth/throttle';
+import { consumePasskeyTicket } from '@/lib/auth/passkeys';
 import { getSettings } from '@/lib/config';
 import { getDb } from '@/lib/db/client';
 import { partners, supervisors } from '@/lib/db/schema';
@@ -84,12 +85,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return user;
       },
     }),
+    Credentials({
+      id: 'passkey',
+      name: 'Phone security',
+      credentials: {},
+      async authorize(_raw, request) {
+        return consumePasskeyTicket(getDb(), request);
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
         token.locale = user.locale;
+        token.authEpoch = typeof user.authEpoch === 'number' ? user.authEpoch : 0;
+        token.authTime = typeof user.authTime === 'number' ? user.authTime : Date.now();
+        token.authMethod = user.authMethod === 'passkey' ? 'passkey' : 'password';
+        token.phoneSetupRequired = user.phoneSetupRequired === true;
         return token;
       }
       // Every later read: the account must still exist and be active, and its role is the stored one.
@@ -105,6 +118,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub;
         session.user.role = isRole(token.role) ? token.role : 'supervisor';
         session.user.locale = typeof token.locale === 'string' ? token.locale : 'en';
+        session.user.authEpoch = typeof token.authEpoch === 'number' ? token.authEpoch : 0;
+        session.user.authTime = typeof token.authTime === 'number' ? token.authTime : 0;
+        session.user.authMethod = token.authMethod === 'passkey' ? 'passkey' : 'password';
+        session.user.phoneSetupRequired = token.phoneSetupRequired === true;
       }
       return session;
     },
@@ -122,16 +139,28 @@ const lookupAccount: AccountLookup = async (id, partner) => {
     return row?.active ? { role: 'partner', locale: 'en' } : null;
   }
   const [row] = await db
-    .select({ active: supervisors.active, role: supervisors.role, locale: supervisors.locale })
+    .select({
+      active: supervisors.active,
+      role: supervisors.role,
+      locale: supervisors.locale,
+      authEpoch: supervisors.authEpoch,
+    })
     .from(supervisors)
     .where(eq(supervisors.id, id));
   if (!row?.active || !isRole(row.role) || row.role === 'partner') {
     return null;
   }
-  return { role: row.role, locale: row.locale };
+  return { role: row.role, locale: row.locale, authEpoch: row.authEpoch };
 };
 
-type SignedInUser = { id: string; name: string; role: Role; locale: string };
+type SignedInUser = {
+  id: string;
+  name: string;
+  role: Role;
+  locale: string;
+  authEpoch?: number;
+  phoneSetupRequired?: boolean;
+};
 
 async function authenticate(identifier: string, password: string): Promise<SignedInUser | null> {
   const db = getDb();
@@ -152,7 +181,12 @@ async function authenticate(identifier: string, password: string): Promise<Signe
   }
 
   const [supervisor] = await db.select().from(supervisors).where(eq(supervisors.phone, identifier));
-  if (!supervisor || !supervisor.active) {
+  if (
+    !supervisor ||
+    !supervisor.active ||
+    supervisor.passwordLoginDisabled ||
+    (supervisor.bootstrapPasswordExpiresAt && supervisor.bootstrapPasswordExpiresAt <= new Date())
+  ) {
     return spendDecoyTime(password);
   }
   if (!(await verifyPassword(password, supervisor.passwordHash))) {
@@ -175,5 +209,7 @@ async function authenticate(identifier: string, password: string): Promise<Signe
     name: supervisor.name,
     role: supervisor.role,
     locale: supervisor.locale,
+    authEpoch: supervisor.authEpoch,
+    phoneSetupRequired: supervisor.bootstrapPasswordExpiresAt !== null,
   };
 }

@@ -161,6 +161,15 @@ Decisions made to unblock the build. Each can be revisited, but code is written 
 
 ## 3. Actors, roles, and auth model
 
+**2026-10-08 phone-access decision:** provisioned supervisor setup/recovery passwords are memorable
+independent random phrases. These expiring sessions grant phone enrollment only. Staff enroll a
+discoverable WebAuthn passkey with required user verification on the configured canonical origin;
+successful enrollment disables password login and invalidates older sessions. Subsequent sign-in uses
+the phone PIN/biometrics without typing a staff code. Passkeys may sync through the phone password
+manager; the app never stores phone secrets. Operator recovery revokes old credentials and issues a
+new phrase. Long-lived sessions/offline evidence and current-role checks remain. Collector identity
+and worker-only payment controls are unchanged. [Phone access](PHONE_ACCESS.md) specifies the flow.
+
 ### 3.1 Actors
 
 | Actor | Authenticates? | How |

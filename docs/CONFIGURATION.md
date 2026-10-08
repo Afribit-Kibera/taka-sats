@@ -86,6 +86,13 @@ settings file only seeds the initial rate table on the first migration.
 
 ## Adding a new tunable
 
+Phone authentication uses `auth.passkey_origin` (exact HTTPS origin, no trailing slash; HTTP localhost
+is allowed for development), `passkey_challenge_seconds` (300; 60-600), `passkey_ticket_seconds`
+(60; 15-120), `passkey_recent_login_seconds` (300; 60-900), `passkey_options_per_minute`
+(120; 10-1000, per process), and `bootstrap_password_days` (7; 1-30). Compose exposes each with the
+usual `TAKASATS__AUTH__...` override. Never derive the trusted passkey origin from forwarded headers.
+Changing it can strand enrolled phones. See [phone access](PHONE_ACCESS.md).
+
 Dashboard keys must expire within `auth.api_key_max_age_days` (default 90; allowed 1-365 days).
 Compose passes `TAKASATS__AUTH__API_KEY_MAX_AGE_DAYS` to the backend. This limits new issuance, not
 extension of existing keys. Session lifetime is separate. See [API integration](API_INTEGRATION.md).

@@ -57,6 +57,19 @@ const collectorsSchema = z.object({
 });
 
 const authSchema = z.object({
+  /** Exact passkey origin: never derived from proxy/request headers. */
+  passkey_origin: z.url().refine((v) => {
+    const u = new URL(v);
+    return (
+      u.origin === v &&
+      (u.protocol === 'https:' || (u.protocol === 'http:' && u.hostname === 'localhost'))
+    );
+  }, 'must be an HTTPS origin (or HTTP localhost), without a trailing slash'),
+  passkey_challenge_seconds: z.int().min(60).max(600),
+  passkey_ticket_seconds: z.int().min(15).max(120),
+  passkey_recent_login_seconds: z.int().min(60).max(900),
+  passkey_options_per_minute: z.int().min(10).max(1000),
+  bootstrap_password_days: z.int().min(1).max(30),
   /** Mandatory API-key expiry may be no further than this many days after issuance. */
   api_key_max_age_days: z.int().min(1).max(365),
   /** How long a supervisor's signed-in session survives, incl. fully offline (§3.1, ADR-0002). */

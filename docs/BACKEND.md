@@ -27,6 +27,26 @@ the definition of done for any API change.
 
 ### Authentication
 
+Staff phone access is described in [PHONE_ACCESS.md](PHONE_ACCESS.md). `GET /api/auth/passkeys`
+(staff cookie only, bearer refused) returns `{enrolled, passwordDisabled, canonicalOrigin}`.
+`POST /api/auth/passkeys` accepts JSON `{action, response?}` with actions `register-options`,
+`register-verify`, `login-options`, `login-verify`. Options return SimpleWebAuthn options and set
+a single-use browser-bound HttpOnly challenge cookie. Register actions require recent staff
+authentication; login actions discover the account from the verified credential without a staff code.
+Verify actions return `{ok:true}` and set an expiring one-use HttpOnly proof cookie. Exchange it via
+`signIn('passkey', {redirect:false})`; Auth.js consumes the proof under its normal CSRF protections.
+PINs/biometrics/private keys never appear in the API. All responses are no-store; mutations require
+the exact configured Origin. Errors: `400 invalid_passkey`, `401 invalid_passkey` (no staff session),
+`401 recent_login_required`, `403 wrong_origin`, `413 invalid_passkey`, `429 rate_limited`.
+No user/credential ID from a request chooses enrollment ownership. API bearer keys cannot enroll.
+
+Sessions additionally expose `authEpoch`, `authTime` (sign-in milliseconds), `authMethod`
+(`password|passkey`), and `phoneSetupRequired`. Operator-issued expiring bootstrap phrases grant
+enrollment only; normal `/api/v1` authorization refuses these sessions with 401. Successful enrollment
+disables the phrase, increases the epoch, and replaces the session through a verified proof. Recovery
+increases the epoch and revokes old credentials/proofs. Legacy password accounts are unchanged until
+explicitly issued a setup phrase. Existing offline evidence survives sign-out and recovery.
+
 Auth.js v5, **credentials** provider, **JWT session in a cookie** (no server session table).
 External dashboard backends may use `Authorization: Bearer <token>` with administrator-owned,
 scoped API keys. Tokens are hash-only at rest, expire and are revocable. Active owner/current role
@@ -923,6 +943,9 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 ---
 
 ## 8. Changelog for the frontend
+
+- 2026-10-08: `/api/auth/passkeys`, passkey Auth.js provider, session authentication metadata,
+  enrollment-only bootstrap sessions, canonical-origin PIN/biometric sign-in and operator recovery.
 
 ### 2026-10-08 - Supervisor installation and device setup
 

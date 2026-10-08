@@ -17,6 +17,7 @@ const PORT = Number(process.env.E2E_PORT ?? 3100);
 // every payout waits for a second person. Set here so the test workers (which run the payout
 // handler themselves, see e2e/field-story.spec.ts) and the server agree.
 const E2E_ENV = {
+  TAKASATS__AUTH__PASSKEY_ORIGIN: `http://localhost:${PORT}`,
   TAKASATS__LIGHTNING__FLOAT_PROVIDER: 'fake',
   TAKASATS_ALLOW_FAKE_PROVIDER: 'true',
   TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS: '0',

@@ -12,7 +12,7 @@ export async function login(page: Page, account: Account, landing: string): Prom
   await page.goto('/login');
   await page.fill('#identifier', account.phone);
   await page.fill('#password', account.password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.waitForURL(/\/(admin|setup)$/);
   if (!page.url().endsWith(landing)) await page.goto(landing);
 }

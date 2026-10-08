@@ -18,6 +18,7 @@ import { getSettings } from '@/lib/config';
  */
 export default async function AdminLayout({ children }: { readonly children: ReactNode }) {
   const session = await auth();
+  if (session?.user.phoneSetupRequired) redirect('/setup');
   const role = session?.user?.role;
   if (!role || !isRole(role) || (role !== 'admin' && role !== 'hub_lead')) {
     redirect('/login');

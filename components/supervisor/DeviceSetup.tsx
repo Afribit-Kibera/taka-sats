@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { isWebNfcAvailable, startTagScan } from '@/lib/nfc';
 import { primeWeighCache } from '@/lib/sync/prime';
 import { InstallCard } from './InstallCard';
+import { PhoneSecurityCard } from '@/components/auth/PhoneSecurityCard';
 
 type DevicePermission = 'camera' | 'geolocation' | 'nfc';
 type State = 'prompt' | 'granted' | 'denied' | 'unsupported' | 'error';
@@ -24,7 +25,7 @@ function deviceCapabilities() {
 }
 
 /** User gestures request each permission; no photo, location or tag data is retained by setup. */
-export function DeviceSetup() {
+export function DeviceSetup({ securityRequired = false }: { readonly securityRequired?: boolean }) {
   const t = useTranslations('FieldSetup');
   const supported = useSyncExternalStore(
     () => () => {},
@@ -147,72 +148,85 @@ export function DeviceSetup() {
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">{t('supportedPhone')}</p>
       <InstallCard />
-      <section aria-labelledby="permissions-heading" className="space-y-4">
-        <h2 id="permissions-heading" className="font-display text-xl font-bold">
-          {t('permissionsTitle')}
-        </h2>
-        <p className="text-sm text-muted-foreground">{t('permissionsHint')}</p>
-        {permissions.map((permission) => {
-          const Icon = icons[permission];
-          const state = supported & bits[permission] ? states[permission] : 'unsupported';
-          return (
-            <div key={permission} className="space-y-3 rounded-xl border border-border bg-card p-4">
-              <h3 className="flex items-center gap-2 font-display font-bold">
-                <Icon aria-hidden="true" className="size-5 text-primary" />
-                {t(permission)}
-              </h3>
-              <p className="text-sm text-muted-foreground">{t(`${permission}Hint`)}</p>
-              <p role="status" className="text-sm font-medium">
-                {t(state)}
-              </p>
-              {state === 'denied' ? <p className="text-sm">{t('permissionDenied')}</p> : null}
-              {state !== 'unsupported' ? (
-                <Button
-                  variant="outline"
-                  className="min-h-11 w-full"
-                  disabled={busy !== null}
-                  onClick={() => void requestPermission(permission)}
+      <PhoneSecurityCard required={securityRequired} />
+      {!securityRequired ? (
+        <>
+          <section aria-labelledby="permissions-heading" className="space-y-4">
+            <h2 id="permissions-heading" className="font-display text-xl font-bold">
+              {t('permissionsTitle')}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t('permissionsHint')}</p>
+            {permissions.map((permission) => {
+              const Icon = icons[permission];
+              const state = supported & bits[permission] ? states[permission] : 'unsupported';
+              return (
+                <div
+                  key={permission}
+                  className="space-y-3 rounded-xl border border-border bg-card p-4"
                 >
-                  {t(busy === permission ? 'requesting' : 'allow', { permission: t(permission) })}
-                </Button>
-              ) : null}
-            </div>
-          );
-        })}
-        <p className="text-sm text-muted-foreground">{t('fallbacks')}</p>
-      </section>
-      <section aria-labelledby="session-heading" className="space-y-3 rounded-xl bg-secondary p-5">
-        <h2 id="session-heading" className="font-display text-xl font-bold">
-          {t('sessionTitle')}
-        </h2>
-        <p role="status" className="text-sm">
-          {t(readiness)}
-          {session ? ` ${session.location}` : ''}
-        </p>
-        <Button
-          className="min-h-12 w-full"
-          disabled={busy !== null}
-          onClick={() => void prepareSession()}
-        >
-          {t(busy === 'session' ? 'checkingSession' : 'checkSession')}
-        </Button>
-        <p className="text-sm">{t('offlineHint')}</p>
-      </section>
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          href="/weigh"
-          className="flex min-h-14 items-center justify-center rounded-lg bg-primary px-3 text-center font-display font-bold text-primary-foreground"
-        >
-          {t('openField')}
-        </Link>
-        <Link
-          href="/cards"
-          className="flex min-h-14 items-center justify-center rounded-lg border border-border px-3 text-center font-display font-bold"
-        >
-          {t('openCards')}
-        </Link>
-      </div>
-      <p className="text-sm text-muted-foreground">{t('approvalHint')}</p>
+                  <h3 className="flex items-center gap-2 font-display font-bold">
+                    <Icon aria-hidden="true" className="size-5 text-primary" />
+                    {t(permission)}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{t(`${permission}Hint`)}</p>
+                  <p role="status" className="text-sm font-medium">
+                    {t(state)}
+                  </p>
+                  {state === 'denied' ? <p className="text-sm">{t('permissionDenied')}</p> : null}
+                  {state !== 'unsupported' ? (
+                    <Button
+                      variant="outline"
+                      className="min-h-11 w-full"
+                      disabled={busy !== null}
+                      onClick={() => void requestPermission(permission)}
+                    >
+                      {t(busy === permission ? 'requesting' : 'allow', {
+                        permission: t(permission),
+                      })}
+                    </Button>
+                  ) : null}
+                </div>
+              );
+            })}
+            <p className="text-sm text-muted-foreground">{t('fallbacks')}</p>
+          </section>
+          <section
+            aria-labelledby="session-heading"
+            className="space-y-3 rounded-xl bg-secondary p-5"
+          >
+            <h2 id="session-heading" className="font-display text-xl font-bold">
+              {t('sessionTitle')}
+            </h2>
+            <p role="status" className="text-sm">
+              {t(readiness)}
+              {session ? ` ${session.location}` : ''}
+            </p>
+            <Button
+              className="min-h-12 w-full"
+              disabled={busy !== null}
+              onClick={() => void prepareSession()}
+            >
+              {t(busy === 'session' ? 'checkingSession' : 'checkSession')}
+            </Button>
+            <p className="text-sm">{t('offlineHint')}</p>
+          </section>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href="/weigh"
+              className="flex min-h-14 items-center justify-center rounded-lg bg-primary px-3 text-center font-display font-bold text-primary-foreground"
+            >
+              {t('openField')}
+            </Link>
+            <Link
+              href="/cards"
+              className="flex min-h-14 items-center justify-center rounded-lg border border-border px-3 text-center font-display font-bold"
+            >
+              {t('openCards')}
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground">{t('approvalHint')}</p>
+        </>
+      ) : null}
     </div>
   );
 }

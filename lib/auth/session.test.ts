@@ -17,6 +17,14 @@ const authMock = auth as unknown as {
 };
 
 describe('getActor / requireScope', () => {
+  it('bootstrap sessions may enroll phone security but cannot access field/admin APIs', async () => {
+    authMock.mockResolvedValue({
+      user: { id: 'sup-1', role: 'supervisor', locale: 'en', phoneSetupRequired: true },
+      expires: '2099-01-01T00:00:00Z',
+    });
+    expect(await getActor()).toBeNull();
+    await expect(requireScope('collector:enrol')).rejects.toThrow(UnauthorizedError);
+  });
   beforeEach(() => {
     authMock.mockReset();
   });

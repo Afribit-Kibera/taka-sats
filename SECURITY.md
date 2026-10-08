@@ -1,5 +1,24 @@
 # Security Policy
 
+## Phone passkey changes (2026-10-08)
+
+- WebAuthn requires discoverable credentials, user presence and verification; signatures, challenge,
+  exact configured origin and RP ID are verified server-side. Platform setup directs the phone's native
+  screen-lock prompt. No PIN, biometric template or private key reaches the app. Synced passkeys are allowed.
+- Fresh cookie authentication is required for registration; bearer API keys cannot enroll phones.
+  Challenges are browser-bound by 256-bit HttpOnly SameSite Strict cookies, expire and are atomically
+  consumed before verification. An expiring one-use hash-only HttpOnly proof is exchanged through
+  Auth.js's CSRF-protected callback. Authentication counters update under row locks.
+- Setup/recovery phrases are independent six-word cryptographic selections, scrypt-hashed and expiring.
+  These sessions grant enrollment only; successful enrollment disables the password and invalidates
+  prior sessions. Operator recovery revokes all old credentials/proofs and increases the account epoch.
+  Current active status/role/epoch are checked online. Existing outage/offline behavior retains the JWT
+  until a successful DB check; disconnected phones cannot receive instant revocation.
+- Mutations reject unconfigured origins and cross-site requests, return no-store responses and generic
+  proof errors. Anonymous options have a bounded per-process rate budget with expired-row cleanup.
+  Distributed edge throttling remains an operational follow-up. No role or key gains payout execution.
+  See [phone access](docs/PHONE_ACCESS.md) for recovery and rollback implications.
+
 ## Supervisor launch changes (2026-10-08)
 
 - PWA setup requests camera, location and NFC only following user gestures; setup keeps no captured

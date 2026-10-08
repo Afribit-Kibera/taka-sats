@@ -38,6 +38,14 @@ code_prefix            = "TS"            # first segment of a collector's public
 default_site_code      = ""              # site segment when an enrolment names none ("" = omit it)
 
 [auth]
+# Passkeys are scoped to this exact origin. Use the canonical installation link.
+# Local browser tests override it with http://localhost:<port>.
+passkey_origin = "https://taka.afribit.africa"
+passkey_challenge_seconds = 300          # single-use, browser-bound ceremony
+passkey_ticket_seconds = 60             # HttpOnly proof exchanged for an Auth.js session
+passkey_recent_login_seconds = 300      # enrollment requires a fresh password/passkey sign-in
+passkey_options_per_minute = 120         # global options budget per app process
+bootstrap_password_days = 7             # operator-issued setup/recovery phrase expires
 # Scoped dashboard keys must explicitly expire within this period (1..365 days).
 api_key_max_age_days = 90
 # How long a signed-in supervisor session survives, including fully offline

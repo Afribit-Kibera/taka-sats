@@ -13,12 +13,21 @@
 
 import { isRole, type Role } from './permissions';
 
-export type LiveAccount = { readonly role: Role; readonly locale: string } | null;
+export type LiveAccount = {
+  readonly role: Role;
+  readonly locale: string;
+  readonly authEpoch?: number;
+} | null;
 
 /** Resolve the account behind a token; `null` when it no longer exists or is inactive. */
 export type AccountLookup = (id: string, partner: boolean) => Promise<LiveAccount>;
 
-type TokenLike = { sub?: string | undefined; role?: unknown; locale?: unknown };
+type TokenLike = {
+  sub?: string | undefined;
+  role?: unknown;
+  locale?: unknown;
+  authEpoch?: unknown;
+};
 
 export async function refreshSessionToken<T extends TokenLike>(
   token: T,
@@ -38,6 +47,7 @@ export async function refreshSessionToken<T extends TokenLike>(
   if (!live || !isRole(live.role)) {
     return null;
   }
+  if ((token.authEpoch ?? 0) !== (live.authEpoch ?? 0)) return null;
   // A partner token must stay a partner and a staff token must stay staff: the table decides.
   token.role = live.role;
   token.locale = live.locale;

@@ -11,6 +11,12 @@ const token = (over: Record<string, unknown> = {}) => ({
 });
 
 describe('refreshSessionToken', () => {
+  it('invalidates old sessions after enrollment or operator recovery, including legacy epoch-zero JWTs', async () => {
+    const lookup: AccountLookup = async () => ({ role: 'supervisor', locale: 'en', authEpoch: 2 });
+    expect(await refreshSessionToken(token(), lookup)).toBeNull();
+    expect(await refreshSessionToken(token({ authEpoch: 1 }), lookup)).toBeNull();
+    expect(await refreshSessionToken(token({ authEpoch: 2 }), lookup)).not.toBeNull();
+  });
   it('ends the session when the account is deactivated or gone', async () => {
     const lookup: AccountLookup = async () => null;
     expect(await refreshSessionToken(token(), lookup)).toBeNull();

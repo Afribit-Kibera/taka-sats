@@ -9,12 +9,20 @@ declare module 'next-auth' {
       id: string;
       role: Role;
       locale: string;
+      authEpoch?: number;
+      authTime?: number;
+      authMethod?: 'password' | 'passkey';
+      phoneSetupRequired?: boolean;
     } & DefaultSession['user'];
   }
 
   interface User {
     role: Role;
     locale: string;
+    authEpoch?: number;
+    authTime?: number;
+    authMethod?: 'password' | 'passkey';
+    phoneSetupRequired?: boolean;
   }
 }
 
@@ -22,5 +30,9 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role?: Role;
     locale?: string;
+    authEpoch?: number;
+    authTime?: number;
+    authMethod?: 'password' | 'passkey';
+    phoneSetupRequired?: boolean;
   }
 }

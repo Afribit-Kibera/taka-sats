@@ -167,7 +167,10 @@
     "password": "Password",
     "signIn": "Sign in",
     "signingIn": "Signing in…",
-    "invalid": "Those sign-in details don’t match."
+    "invalid": "Those sign-in details don’t match.",
+    "phoneSignIn": "Sign in with phone security",
+    "firstLogin": "First time or recovering a phone? Use your staff code and private setup phrase below, then set up phone security.",
+    "phoneFailed": "Phone sign-in was not completed. Use the installation link, approve the phone prompt, or ask your administrator for recovery."
   },
   "Enrol": {
     "title": "Register a recipient",
@@ -1345,9 +1348,26 @@
     "openCards": "Write or check cards",
     "approvalHint": "A supervisor's new collector stays pending until an operator authorizes them and verifies a receive wallet. A card does not activate a collector. Eligible synced work can trigger a real payment.",
     "handoffInstall": "Install the app and open its home-screen icon.",
-    "handoffLogin": "Sign in with your assigned staff code and private password.",
+    "handoffLogin": "Sign in once with your staff code and setup phrase, then set up phone security.",
     "handoffSetup": "Allow camera, location and NFC, then download your assigned session.",
     "handoffCard": "Register a collector, scan their wallet's Receive QR, then choose Write or print a card. Hold a blank card to the phone, present the same card for read-back, and check the linked identity.",
     "signInSetup": "Sign in and set up this phone"
+  },
+  "PhoneSecurity": {
+    "title": "Phone security",
+    "hint": "Create a passkey using this phone’s PIN, fingerprint or face unlock. Your PIN and biometrics stay on the phone.",
+    "required": "Complete phone security before starting field work. Your setup password stops working after successful enrollment.",
+    "ready": "Enable a screen lock on your Android, then set up phone security here.",
+    "enrolled": "Phone security is ready. Next time, choose “Sign in with phone security”. Your setup password is disabled.",
+    "unsupported": "Enable a phone screen lock, use updated Android Chrome, then reload this page. If phone security is still unavailable, contact the administrator.",
+    "setUp": "Set up phone security",
+    "addPhone": "Add another passkey",
+    "settingUp": "Waiting for phone security…",
+    "cancelled": "Phone security was not completed. Try again and approve the phone prompt. If enrollment succeeded but sign-in failed, use phone security on the sign-in page.",
+    "recentLogin": "For safety, sign out and sign in again before adding phone security.",
+    "statusFailed": "Could not check phone security. Reconnect and reload this page.",
+    "signInAgain": "Open sign-in",
+    "canonical": "Continue on the installation link",
+    "recovery": "Use the same installation link each time. Passkeys may sync through your phone’s password manager. If the phone is lost or a passkey is unavailable, ask the administrator to revoke access and issue a new setup phrase."
   }
 }
