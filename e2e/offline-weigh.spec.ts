@@ -32,6 +32,11 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
     });
+    if (!(await page.evaluate(() => !!navigator.serviceWorker.controller))) {
+      // A page opened before the first install may need one online navigation to join its scope.
+      await page.reload();
+      await page.getByRole('button', { name: /Record a collection/ }).click();
+    }
     await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   }
 

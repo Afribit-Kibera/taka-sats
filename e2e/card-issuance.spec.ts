@@ -50,8 +50,7 @@ test('supervisor issues a pending identity card without authorizing payable work
   const publicCode = await page.getByTestId('public-code').innerText();
   await expect(page.getByTestId('pending-note')).toBeVisible();
   await page.getByRole('link', { name: 'Write or print a card' }).click();
-  await page.fill('#card-search', publicCode);
-  await page.getByRole('button', { name: new RegExp(`Pending Card E2E ${publicCode}`) }).click();
+  await expect(page).toHaveURL(/\/cards\?collector=/);
   await expect(
     page.getByText('You can issue this identity card now.', { exact: false }),
   ).toBeVisible();

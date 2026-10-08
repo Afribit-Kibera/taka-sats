@@ -8,6 +8,10 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- **Supervisor phone setup.** `/install` and `/setup` detect standalone use, offer installation,
+  request camera/location/NFC through separate gestures, and download assigned field data. Registration
+  opens the new recipient's blank NFC writer. Private APIs bypass the service-worker cache, and
+  reconnecting syncs durable work without reloading the current screen.
 - **Scoped API keys for existing dashboards.** Administrator-session issuance, mandatory expiry,
   immediate revocation, hash-only storage and permissions intersected with the owner's current role.
   Keys cannot manage other keys or execute payouts. See `docs/API_INTEGRATION.md`.
