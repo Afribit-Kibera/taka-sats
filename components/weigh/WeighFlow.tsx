@@ -347,16 +347,16 @@ export function WeighFlow({
         <button
           type="button"
           onClick={resetForNext}
-          className="flex min-h-40 w-full items-center gap-5 rounded-3xl bg-fill-bitcoin p-6 text-left text-foreground shadow-[0_8px_24px_rgb(247_147_26/0.18)] active:bg-fill-bitcoin-pressed"
+          className="flex min-h-40 w-full items-center gap-3 rounded-3xl bg-fill-bitcoin p-5 text-left text-foreground shadow-[0_8px_24px_rgb(247_147_26/0.18)] active:bg-fill-bitcoin-pressed sm:gap-5 sm:p-6"
         >
-          <Recycle aria-hidden="true" className="size-16 shrink-0" />
+          <Recycle aria-hidden="true" className="size-10 shrink-0 sm:size-16" />
           <span className="min-w-0 flex-1">
-            <strong className="block font-display text-3xl font-bold leading-none">
+            <strong className="block font-display text-2xl font-bold leading-none sm:text-3xl">
               {home('recordTitle')}
             </strong>
             <span className="mt-3 block text-base">{home('recordDescription')}</span>
           </span>
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card sm:size-12">
             <ArrowRight aria-hidden="true" className="size-6" />
           </span>
         </button>
