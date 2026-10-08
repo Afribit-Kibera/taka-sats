@@ -52,6 +52,8 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.playwright-cli/
+/output/playwright/
 
 # Personal / AI-assistant working files. Kept locally, never published.
 AGENTS.md

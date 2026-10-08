@@ -31,6 +31,11 @@ const eslintConfig = defineConfig([
     'public/sw.js',
     'public/sw.js.map',
     'public/swe-worker-*.js',
+    // Generated browser reports can change while the test runner is active.
+    'test-results/**',
+    'playwright-report/**',
+    '.playwright-cli/**',
+    'output/playwright/**',
   ]),
 ]);
 

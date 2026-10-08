@@ -6,37 +6,45 @@ import { login } from './helpers';
 
 /** What each role can reach in the browser. The API checks every scope itself; this is the visible half. */
 test.describe('roles', () => {
-  test('a hub lead sees the vetting and payout screens, and none of the money-stewardship ones', async ({
+  test('a hub lead has field review and operating-wallet reads, without administration or funding', async ({
     page,
   }) => {
     await login(page, HUB_LEAD, '/admin');
     const nav = page.getByRole('navigation', { name: 'Operator console' });
-    for (const name of ['Overview', 'Collectors', 'Payouts', 'Events']) {
+    for (const name of [
+      'Overview',
+      'Recipients',
+      'Payouts',
+      'Events',
+      'Needs review',
+      'Hot wallet',
+      'Reconciliation',
+    ]) {
       await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
     }
-    for (const name of ['Treasury', 'Ledger', 'Anomalies', 'Reconciliation', 'Staff', 'Rates']) {
+    for (const name of ['Treasury', 'Ledger', 'Anomalies', 'Staff', 'Rates']) {
       await expect(nav.getByRole('link', { name, exact: true })).toHaveCount(0);
     }
 
     // Typing the address does not help: admin-only screens send a hub lead back to the overview.
-    for (const path of ['/treasury', '/ledger', '/staff', '/anomalies']) {
+    for (const path of ['/ledger', '/staff', '/anomalies', '/rates']) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/admin$/);
     }
 
-    // And the server refuses the data itself.
+    // Review scopes include anomaly reads; the dedicated administration screen stays restricted.
     const statuses = await page.evaluate(async () => {
       const out: Record<string, number> = {};
-      for (const path of ['/treasury', '/ledger', '/supervisors', '/anomalies']) {
+      for (const path of ['/hot-wallet', '/ledger', '/supervisors', '/anomalies']) {
         out[path] = (await fetch(`/api/v1${path}`)).status;
       }
       return out;
     });
     expect(statuses).toEqual({
-      '/treasury': 403,
+      '/hot-wallet': 200,
       '/ledger': 403,
       '/supervisors': 403,
-      '/anomalies': 403,
+      '/anomalies': 200,
     });
   });
 

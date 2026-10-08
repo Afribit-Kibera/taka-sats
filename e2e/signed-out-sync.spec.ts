@@ -36,6 +36,7 @@ test('a 401 on sync keeps the queue; signing in again drains it', async ({ page,
 
     await setActive(true);
   } finally {
+    await setActive(true);
     await closeDb();
   }
 

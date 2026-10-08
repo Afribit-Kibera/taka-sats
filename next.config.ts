@@ -49,7 +49,8 @@ const withSerwist = withSerwistInit({
   swSrc: 'app/sw.ts',
   swDest: 'public/sw.js',
   disable: process.env.NODE_ENV !== 'production',
-  reloadOnOnline: true,
+  // SyncManager reconnects without interrupting a draft or hiding the signed-out queue.
+  reloadOnOnline: false,
 });
 
 /**
@@ -83,7 +84,7 @@ export function buildSecurityHeaders(dev = process.env.NODE_ENV !== 'production'
     {
       key: 'Permissions-Policy',
       value:
-        'camera=(self), geolocation=(self), nfc=(self), bluetooth=(self), microphone=(), payment=(), usb=(), serial=(), display-capture=(), interest-cohort=()',
+        'camera=(self), geolocation=(self), bluetooth=(self), microphone=(), payment=(), usb=(), serial=(), display-capture=(), interest-cohort=()',
     },
     { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
     { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },

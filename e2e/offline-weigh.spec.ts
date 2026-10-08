@@ -28,8 +28,22 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
   await page.getByRole('button', { name: /Record a collection/ }).click();
   await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
 
+  if (process.env.E2E_WITH_SERVICE_WORKER === '1') {
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  }
+
   // ── network off ──────────────────────────────────────────────────────────
   await context.setOffline(true);
+
+  if (process.env.E2E_WITH_SERVICE_WORKER === '1') {
+    // A full offline reload exercises the installed shell, rather than only a warm React screen.
+    await page.reload();
+    await page.getByRole('button', { name: /Record a collection/ }).click();
+    await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
+  }
 
   // collector — from the cached list, no network
   await page.getByRole('textbox', { name: 'Name, group or public code' }).fill('Amina');

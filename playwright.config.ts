@@ -8,8 +8,8 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * `webServer` builds and starts the app once. It needs `DATABASE_URL` and
  * `AUTH_SECRET` in the environment (CI sets both; locally, `.env.local`).
- * `pnpm build:turbo` — the service worker is not needed here: the spec loads
- * online, then `context.setOffline(true)`.
+ * Set `E2E_WITH_SERVICE_WORKER=1` for the production webpack build, cold offline
+ * reload and reconnect checks. The default Turbopack run checks warm offline capture.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 
@@ -49,7 +49,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: `pnpm build:turbo && pnpm exec next start -p ${PORT}`,
+    command: `pnpm ${process.env.E2E_WITH_SERVICE_WORKER === '1' ? 'build' : 'build:turbo'} && pnpm exec next start -p ${PORT}`,
     url: `http://localhost:${PORT}/login`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

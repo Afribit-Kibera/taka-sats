@@ -14,8 +14,8 @@
  *   - **Runtime caching** via Serwist's `defaultCache` (Next's recommended
  *     per-asset-class strategies: NetworkFirst for pages/data, StaleWhileRevalidate
  *     for static assets, CacheFirst for images/fonts).
- *   - `navigationPreload`, `skipWaiting`, `clientsClaim`, `reloadOnOnline`
- *     (the last from `next.config.ts`).
+ *   - `navigationPreload`, `skipWaiting`, `clientsClaim`; reconnect leaves the current
+ *     screen in place while the client sync loop drains its durable queue.
  *
  * Still to come (M4): a Background Sync handler that drains `lib/sync`'s
  * `outbox` to `POST /api/v1/sync/events` when connectivity returns. The
