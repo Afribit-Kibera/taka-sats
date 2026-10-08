@@ -175,7 +175,10 @@ export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnable
           <p className="text-sm text-muted-foreground">{t('walletChecking')}</p>
         ) : null}
         <p className="text-sm text-muted-foreground">{t('cardLater')}</p>
-        <Link href="/cards" className="inline-block min-h-11 py-3 text-sm underline">
+        <Link
+          href={collectorId ? `/cards?collector=${encodeURIComponent(collectorId)}` : '/cards'}
+          className="inline-block min-h-11 py-3 text-sm underline"
+        >
           {t('cardsLink')}
         </Link>
         <Button size="pwa" onClick={reset}>

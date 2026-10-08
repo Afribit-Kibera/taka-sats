@@ -37,7 +37,7 @@ export function LoginForm() {
       .then((r) => r.json())
       .catch(() => null)) as { user?: { role?: string } } | null;
     const role = session?.user?.role;
-    router.push(role === 'admin' || role === 'hub_lead' ? '/admin' : '/enrol');
+    router.push(role === 'admin' || role === 'hub_lead' ? '/admin' : '/setup');
     router.refresh();
   }
 

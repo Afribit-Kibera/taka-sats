@@ -1,5 +1,19 @@
 # Security Policy
 
+## Supervisor launch changes (2026-10-08)
+
+- PWA setup requests camera, location and NFC only following user gestures; setup keeps no captured
+  image, coordinates or card payload. Camera tracks and NFC scans stop after the checks.
+- Private API requests bypass service-worker caches; the prior `apis` cache is deleted on activation.
+  Field evidence remains in IndexedDB until acknowledged. Use a dedicated staff phone and do not clear
+  browser storage while work is queued. Installation never grants staff or payment permissions.
+- NFC retains blank-only writes, identity readback, authenticated ownership checks and pending-recipient
+  gates. A written card cannot activate a recipient or select a wallet.
+- Remediation: Next.js/eslint-config-next 16.3.8, smol-toml 1.9.0, sharp 0.35.5 and source-map-js 1.2.2.
+  Production audit is clean. Full audit still reports GHSA-vfj7-8cjw-p6xm in development-only `braces`
+  via ESLint/fast-glob; no patched version is published. Lint receives repository paths, not public input.
+  Track the upstream patch rather than suppressing the advisory.
+
 ## Field-first changes (2026-10-06)
 
 - Dashboard bearer keys contain 256 random bits, mandatory bounded expiry, hash-only storage and

@@ -23,7 +23,7 @@
  */
 
 import { defaultCache } from '@serwist/next/worker';
-import { type PrecacheEntry, type SerwistGlobalConfig, Serwist } from 'serwist';
+import { NetworkOnly, type PrecacheEntry, type SerwistGlobalConfig, Serwist } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -40,10 +40,21 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    {
+      matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/api/'),
+      handler: new NetworkOnly(),
+    },
+    ...defaultCache,
+  ],
 });
 
 serwist.addEventListeners();
+
+// Retire previously cached private reads. Offline field data has its explicit IndexedDB contract.
+self.addEventListener('activate', (event: ExtendableEvent) => {
+  event.waitUntil(caches.delete('apis'));
+});
 
 // M4 hook: a page can ask the SW to attempt an outbox drain (e.g. right after
 // coming back online). No-op until the sync loop lands.

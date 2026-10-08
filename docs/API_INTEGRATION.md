@@ -99,6 +99,10 @@ All paths below are relative to `/api/v1`; use [BACKEND.md](BACKEND.md) for exac
 
 ### Before a field test
 
+Send supervisors to [`/install`](https://taka.afribit.africa/install) on Android Chrome. Staff-code login
+opens `/setup` for install status, user-gesture camera/location/NFC checks and session download. See
+[supervisor setup](SUPERVISOR_SETUP.md) for the phone/card/offline acceptance procedure.
+
 Provision separate staff logins, publish the material rates, and create/start a session assigned to
 the participating supervisors with the actual collection location and time window. An authenticated
 supervisor without an active assigned session receives `403 no_active_session`; a successful login

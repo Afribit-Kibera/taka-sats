@@ -7,7 +7,7 @@ administrator dashboard can consume the API; the bundled console is optional. St
 code is right and this file is stale. Fix it in the same change: updating this file is part of
 the definition of done for any API change.
 
-**Last updated:** 2026-10-06 · **Status key:** ✅ built and tested · 🚧 being built · 📋 planned
+**Last updated:** 2026-10-08 · **Status key:** ✅ built and tested · 🚧 being built · 📋 planned
 
 - [1. Orientation](#1-orientation) · [2. Roles and scopes](#2-roles-and-scopes) · [3. The domain in one page](#3-the-domain-in-one-page)
 - [4. Offline contract](#4-offline-contract) · [5. Endpoint reference](#5-endpoint-reference) · [6. Things that happen in the background](#6-things-that-happen-in-the-background)
@@ -923,6 +923,19 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 ---
 
 ## 8. Changelog for the frontend
+
+### 2026-10-08 - Supervisor installation and device setup
+
+- Public `/install` offers browser installation and manual Chrome guidance. `/setup` is staff-only,
+  checks camera/location/NFC permissions on explicit user gestures and downloads active-session data.
+- `GET /field.webmanifest` is public, starts the installed app at `/setup` and retains identity `/`.
+  It is served by the backend through the canonical proxy, independently of public-site publication.
+- Supervisors land at `/setup` after login. Registration links directly to `/cards?collector=<id>`;
+  the server still enforces collector ownership and authorization. Blank NFC write/readback is unchanged.
+- Private API reads are network-only in the service worker; cached private reads are retired on
+  activation. Explicit IndexedDB field caches and queued evidence remain the offline contract.
+- Installation acceptance is distinguished from running in standalone mode. Desktop tests simulate
+  device permission/NFC APIs; a real Android and blank tag remain necessary for hardware verification.
 
 Newest first. Anything here may need a UI change.
 

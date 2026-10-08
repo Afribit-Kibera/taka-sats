@@ -31,7 +31,11 @@ type Step =
  * the collector's public reference only (D-24); the chip serial is then linked to the collector so
  * a tap finds them. Pending collectors can be tagged; tagging never authorizes payment.
  */
-export function CardWriter() {
+export function CardWriter({
+  initialCollectorId,
+}: {
+  readonly initialCollectorId?: string | undefined;
+}) {
   const t = useTranslations('Cards');
   const supported = useSyncExternalStore(
     () => () => undefined,
@@ -46,6 +50,23 @@ export function CardWriter() {
   const abort = useRef<AbortController | null>(null);
 
   useEffect(() => () => abort.current?.abort(), []);
+
+  useEffect(() => {
+    if (!initialCollectorId) return;
+    const controller = new AbortController();
+    void fetch(`/api/v1/collectors/${encodeURIComponent(initialCollectorId)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('load_failed');
+        const body = (await response.json()) as { collector: Detail };
+        if (!controller.signal.aborted) setChosen(body.collector);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setMessage(t('loadFailed'));
+      });
+    return () => controller.abort();
+  }, [initialCollectorId, t]);
 
   useEffect(() => {
     const q = query.trim();
@@ -104,6 +125,10 @@ export function CardWriter() {
     if (!chosen || chosen.status === 'revoked') {
       return;
     }
+    if (!navigator.onLine) {
+      setMessage(t('onlineRequired'));
+      return;
+    }
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
@@ -112,9 +137,14 @@ export function CardWriter() {
     let serial: string;
     try {
       serial = await writeCollectorCard(chosen.reference, controller.signal);
-    } catch {
+    } catch (error) {
       setStep({ kind: 'pick' });
-      if (!controller.signal.aborted) setMessage(t('writeFailed'));
+      if (!controller.signal.aborted)
+        setMessage(
+          error instanceof DOMException && error.name === 'NotAllowedError'
+            ? t('permissionDenied')
+            : t('writeFailed'),
+        );
       return;
     }
     try {
@@ -175,6 +205,10 @@ export function CardWriter() {
 
   const linkWritten = useCallback(async () => {
     if (!chosen || chosen.status === 'revoked') return;
+    if (!navigator.onLine) {
+      setMessage(t('onlineRequired'));
+      return;
+    }
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;

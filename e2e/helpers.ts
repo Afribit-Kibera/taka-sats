@@ -13,7 +13,8 @@ export async function login(page: Page, account: Account, landing: string): Prom
   await page.fill('#identifier', account.phone);
   await page.fill('#password', account.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL(`**${landing}`);
+  await page.waitForURL(/\/(admin|setup)$/);
+  if (!page.url().endsWith(landing)) await page.goto(landing);
 }
 
 /** A fresh, isolated browser session (its own cookies) for one person. */

@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { PwaProvider } from '@/components/supervisor/PwaProvider';
 import './globals.css';
 
 const displayFont = Space_Grotesk({
@@ -50,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
       'verified recycling',
     ],
     alternates: { canonical: '/' },
-    manifest: '/manifest.webmanifest',
+    manifest: '/field.webmanifest',
     icons: {
       icon: [
         { url: '/favicon.ico', sizes: 'any' },
@@ -125,7 +126,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       <body>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem={false}>
-            {children}
+            <PwaProvider>{children}</PwaProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

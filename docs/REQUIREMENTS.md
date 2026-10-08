@@ -30,6 +30,13 @@ self-approval bypass is introduced.
 
 ### Current implementation override (2026-10-06, D-29)
 
+Supervisor launch clarification (2026-10-08): public `/install` detects the available browser install
+prompt and provides manual Chrome instructions; installed launch is `/setup`. Staff setup requests
+camera/location/NFC through separate user gestures, shows denied/unsupported states and explicitly
+downloads active-session caches. Registration opens the selected recipient's blank-card writer.
+These changes grant no payment scope and do not change recipient authorization. Private API reads
+are network-only; IndexedDB retains offline field capture. See [supervisor setup](SUPERVISOR_SETUP.md).
+
 [ADR-0021](adr/0021-field-first-risk-based-payments.md) and [BACKEND.md](BACKEND.md) supersede the
 older universal payment-approval and in-app treasury-vote sections below. The field flow is identify,
 material, physical kg, mandatory photo, offline save. Individual and collective recipients share the

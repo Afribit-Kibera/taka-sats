@@ -9,8 +9,10 @@ allowBuilds:
   sharp: false
   unrs-resolver: false
 
-# Patched transitive versions for advisories that only reach build and lint tooling (pnpm audit --prod is clean).
+# Patched transitive versions for dependency security advisories; keep full audit clean.
 overrides:
+  source-map-js@<1.2.2: '1.2.2'
+  sharp@<0.35.5: '0.35.5'
   browserslist@<4.28.7: '>=4.28.7'
   fast-uri@<3.1.8: '>=3.1.8'
   'brace-expansion@>=4.0.0 <5.0.12': '>=5.0.12'

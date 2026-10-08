@@ -21,7 +21,7 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
   await page.fill('#identifier', FIELD_SUPERVISOR.phone);
   await page.fill('#password', FIELD_SUPERVISOR.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/enrol');
+  await page.waitForURL('**/setup');
 
   // ── prime the weigh cache (online) ────────────────────────────────────────
   await page.goto('/weigh');
