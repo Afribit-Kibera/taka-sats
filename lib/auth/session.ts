@@ -3,8 +3,9 @@
 /**
  * The RBAC gate every `/api/v1` route handler goes through (M2-2, pulled
  * forward to unblock M1-4). Deny-by-default: no session → 401; a session
- * without the required scope → 403. Resolves the Auth.js JWT session — no DB
- * round trip (§3.1's offline-surviving session).
+ * without the required scope → 403. Auth.js checks the current account/role/epoch
+ * online; expiring bootstrap sessions are limited to phone enrollment. The PWA's
+ * cached session/evidence can survive offline (§3.1).
  *
  * This module *does* import the Next-adjacent `auth()` helper, so it is not
  * one of D-04's framework-free `lib/` subpackages — it is the seam between

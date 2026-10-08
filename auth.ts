@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- * Auth.js v5 — supervisor credentials login (M2-1, pulled forward to unblock
- * M1-4's RBAC-gated routes).
+ * Auth.js v5 — staff setup credentials and phone passkeys; partner credentials.
  *
- * JWT session strategy (no `sessions` table, no DB round trip to validate a
- * session): `session.maxAge` comes from `settings.auth.session_max_age_days`,
+ * JWT session strategy (no server-side sessions table): online reads check the
+ * active account, current role and authentication epoch. `session.maxAge` comes
+ * from `settings.auth.session_max_age_days`,
  * long enough that a supervisor's PWA session survives an extended offline
  * period (§3.1, ADR-0002). `AUTH_SECRET` signs the JWT — environment only
  * (D-21 §13.1), never in `config/*.toml`.
  *
- * Only the credentials provider exists here; `partners` login and revocation
- * UX are the rest of M2-1, not needed to unblock M1.
+ * Passkey proofs arrive through an expiring one-use HttpOnly cookie, verified
+ * before this callback. Successful enrollment retires the setup password and
+ * invalidates old sessions. Operator recovery is documented in PHONE_ACCESS.md.
  */
 
 import { eq } from 'drizzle-orm';
