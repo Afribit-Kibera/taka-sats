@@ -1,30 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 'use client';
-import { CircleCheck, OctagonX, ScanLine } from 'lucide-react';
+import { CircleCheck, Nfc, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useCallback, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Drawer } from 'vaul';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { QrScanner } from './QrScanner';
-type Step = 'alias' | 'scanning' | 'validated' | 'rejected' | 'done';
+
 type CollectorResponse = {
   collector: {
     id: string;
     alias: string;
     publicCode: string;
     status: string;
-    lightningAddress: string | null;
-    lnurlPayRaw: string | null;
+    recipientType?: 'individual' | 'collective';
   };
-  destination?: { address: string | null; status: string };
+  destination?: { address: string | null; status: string } | null;
 };
-
-type ApiErrorBody = { error?: { code?: string } } | null;
-
-/** Error codes we have a specific, friendly message for (Enrol.errors.*). */
 const KNOWN_ERRORS = new Set([
   'no_active_session',
   'forbidden',
@@ -38,287 +33,282 @@ const KNOWN_ERRORS = new Set([
   'collector_not_authorized',
   'invalid_request',
 ]);
-async function postJson(url: string, body: unknown): Promise<Response> {
-  return fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
-export function EnrolFlow({ provisioningEnabled }: { readonly provisioningEnabled: boolean }) {
-  const t = useTranslations('Enrol');
-  const [step, setStep] = useState<Step>('alias');
-  const [alias, setAlias] = useState('');
-  const [recipientType, setRecipientType] = useState<'individual' | 'collective'>('individual');
-  const registering = useRef(false);
-  const registrationId = useRef<string | null>(null);
-  const submitting = useRef(false);
-  const [collectorId, setCollectorId] = useState<string | null>(null);
-  const [payTarget, setPayTarget] = useState<string | null>(null);
-  const [manualCode, setManualCode] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [publicCode, setPublicCode] = useState<string | null>(null);
-  const [pendingAuth, setPendingAuth] = useState(false);
-  const [walletChecking, setWalletChecking] = useState(false);
-  const [hasWallet, setHasWallet] = useState(false);
 
-  const errorText = useCallback(
-    async (res: Response, fallback: string): Promise<string> => {
-      if (res.status === 401) {
-        return t('errors.unauthorized');
-      }
-      const body = (await res.json().catch(() => null)) as ApiErrorBody;
-      const code = body?.error?.code;
-      return code && KNOWN_ERRORS.has(code) ? t(`errors.${code}`) : fallback;
-    },
-    [t],
-  );
-  const startScan = useCallback(async () => {
-    if (registering.current) return;
-    if (collectorId) {
-      setStep('scanning');
-      return;
-    }
-    registering.current = true;
-    setBusy(true);
-    setMessage(null);
-    try {
-      registrationId.current ??= crypto.randomUUID();
-      const res = await postJson('/api/v1/collectors', {
-        id: registrationId.current,
-        alias: alias.trim(),
-        recipientType,
-      });
-      if (!res.ok) {
-        setMessage(await errorText(res, t('enrolFailed')));
-        return;
-      }
-      const { collector } = (await res.json()) as CollectorResponse;
-      setCollectorId(collector.id);
-      setAlias(collector.alias);
-      setPublicCode(collector.publicCode);
-      setPendingAuth(collector.status !== 'active');
-      setStep('scanning');
-    } catch {
-      setMessage(t('enrolFailed'));
-    } finally {
-      registering.current = false;
-      setBusy(false);
-    }
-  }, [alias, collectorId, recipientType, errorText, t]);
-  const submitCode = useCallback(
-    async (raw: string) => {
-      if (!collectorId || !raw.trim() || submitting.current) {
-        return;
-      }
-      setBusy(true);
-      submitting.current = true;
-      setMessage(null);
-      try {
-        const res = await postJson(`/api/v1/collectors/${collectorId}/destinations`, {
-          rawCode: raw.trim(),
-        });
-        if (res.ok) {
-          const { collector, destination } = (await res.json()) as CollectorResponse;
-          setPayTarget(destination?.address ?? collector.lnurlPayRaw ?? collector.lightningAddress);
-          setWalletChecking(res.status === 202);
+/** Name and Receive wallet together. Partial failures retry the same collector UUID. */
+export function EnrolFlow({
+  provisioningEnabled,
+  initialCollectorId,
+}: {
+  readonly provisioningEnabled: boolean;
+  readonly initialCollectorId?: string | undefined;
+}) {
+  const t = useTranslations('Enrol');
+  const f = useTranslations('Field');
+  const [alias, setAlias] = useState('');
+  const [wallet, setWallet] = useState('');
+  const [recipientType, setRecipientType] = useState<'individual' | 'collective'>('individual');
+  const [collector, setCollector] = useState<CollectorResponse['collector'] | null>(null);
+  const [loading, setLoading] = useState(Boolean(initialCollectorId));
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [hasWallet, setHasWallet] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submission = useRef(false);
+  const registrationId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialCollectorId) return;
+    let live = true;
+    void fetch(`/api/v1/collectors/${encodeURIComponent(initialCollectorId)}`, {
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error();
+        const data = (await response.json()) as CollectorResponse;
+        if (!live) return;
+        setCollector(data.collector);
+        setAlias(data.collector.alias);
+        setRecipientType(data.collector.recipientType ?? 'individual');
+        if (data.destination) {
           setHasWallet(true);
-          setStep('validated');
+          setWallet(data.destination.address ?? '');
+          setChecking(data.destination.status !== 'verified');
+        }
+      })
+      .catch(() => {
+        if (live) setError(t('enrolFailed'));
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [initialCollectorId, t]);
+  async function responseError(response: Response) {
+    if (response.status === 401) return t('errors.unauthorized');
+    const body = (await response.json().catch(() => null)) as { error?: { code?: string } } | null;
+    const code = body?.error?.code;
+    return code && KNOWN_ERRORS.has(code) ? t(`errors.${code}`) : t('enrolFailed');
+  }
+  async function save() {
+    if (submission.current || loading || !alias.trim() || (initialCollectorId && !collector))
+      return;
+    submission.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      let saved = collector;
+      if (!saved) {
+        registrationId.current ??= crypto.randomUUID();
+        const response = await fetch('/api/v1/collectors', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id: registrationId.current, alias: alias.trim(), recipientType }),
+        });
+        if (!response.ok) {
+          setError(await responseError(response));
           return;
         }
-        setMessage(await errorText(res, t('addressInvalid')));
-        setStep('rejected');
-      } catch {
-        setMessage(t('enrolFailed'));
-        setStep('rejected');
-      } finally {
-        submitting.current = false;
-        setBusy(false);
+        saved = ((await response.json()) as CollectorResponse).collector;
+        setCollector(saved);
+        setAlias(saved.alias);
       }
-    },
-    [collectorId, errorText, t],
-  );
-  const reset = useCallback(() => {
+      if (wallet.trim() && !hasWallet) {
+        const response = await fetch(`/api/v1/collectors/${saved.id}/destinations`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ rawCode: wallet.trim() }),
+        });
+        if (!response.ok) {
+          setError(await responseError(response));
+          return;
+        }
+        setHasWallet(true);
+        setChecking(response.status === 202);
+      }
+      setDone(true);
+    } catch {
+      setError(t('enrolFailed'));
+    } finally {
+      submission.current = false;
+      setBusy(false);
+    }
+  }
+  function reset() {
     registrationId.current = null;
-    setStep('alias');
     setAlias('');
+    setWallet('');
     setRecipientType('individual');
-    setCollectorId(null);
-    setPayTarget(null);
-    setManualCode('');
-    setMessage(null);
-    setPublicCode(null);
-    setPendingAuth(false);
-    setWalletChecking(false);
+    setCollector(null);
     setHasWallet(false);
-  }, []);
-  if (step === 'done') {
+    setChecking(false);
+    setDone(false);
+    setError(null);
+  }
+  if (loading)
     return (
-      <div className="space-y-6 text-center">
-        <CircleCheck aria-hidden="true" className="mx-auto size-12 text-primary" />
-        <p className="font-display text-lg font-medium">
-          {pendingAuth ? t('pendingTitle', { alias }) : t('doneTitle', { alias })}
-        </p>
-        {publicCode ? (
-          <p className="font-mono text-2xl font-bold" data-testid="public-code">
-            {publicCode}
-          </p>
-        ) : null}
-        {pendingAuth ? (
+      <p role="status" className="text-sm text-muted-foreground">
+        {t('mine.loading')}
+      </p>
+    );
+  if (done && collector)
+    return (
+      <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center gap-3">
+          <CircleCheck aria-hidden="true" className="size-8 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <h2 className="break-words font-display text-lg font-bold">
+              {t(collector.status === 'active' ? 'doneTitle' : 'pendingTitle', { alias })}
+            </h2>
+            <p className="font-mono text-sm" data-testid="public-code">
+              {collector.publicCode}
+            </p>
+          </div>
+        </div>
+        {collector.status !== 'active' ? (
           <p className="text-sm text-muted-foreground" data-testid="pending-note">
             {t('pendingBody')}
           </p>
         ) : null}
-        {!hasWallet ? <p className="text-sm text-muted-foreground">{t('noWalletYet')}</p> : null}
-        {walletChecking ? (
-          <p className="text-sm text-muted-foreground">{t('walletChecking')}</p>
-        ) : null}
-        <p className="text-sm text-muted-foreground">{t('cardLater')}</p>
-        <Link
-          href={collectorId ? `/cards?collector=${encodeURIComponent(collectorId)}` : '/cards'}
-          className="inline-block min-h-11 py-3 text-sm underline"
-        >
-          {t('cardsLink')}
-        </Link>
-        <Button size="pwa" onClick={reset}>
-          {t('enrolAnother')}
+        {!hasWallet ? (
+          <p className="text-sm text-muted-foreground">{t('noWalletYet')}</p>
+        ) : (
+          <p className="text-sm text-primary">
+            {checking ? t('walletChecking') : t('receiveOnlyOk')}
+          </p>
+        )}
+        <Button asChild size="pwa">
+          <Link href="/weigh">{f('backToCollections')}</Link>
         </Button>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Link
+            href={`/cards?collector=${encodeURIComponent(collector.id)}`}
+            className="flex min-h-11 items-center gap-2 text-sm text-primary"
+          >
+            <Nfc aria-hidden="true" className="size-4" />
+            {t('cardsLink')}
+          </Link>
+          {!initialCollectorId ? (
+            <Button variant="ghost" onClick={reset}>
+              {t('enrolAnother')}
+            </Button>
+          ) : null}
+        </div>
       </div>
     );
-  }
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">{t('onlineRegistration')}</p>
-      <fieldset disabled={step !== 'alias' || collectorId !== null} className="space-y-2">
-        <legend className="mb-2 font-display text-sm font-medium">{t('recipientType')}</legend>
-        <div className="grid grid-cols-2 gap-3">
-          {(['individual', 'collective'] as const).map((type) => (
-            <label
-              key={type}
-              className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4"
-            >
-              <input
-                type="radio"
-                name="recipientType"
-                value={type}
-                checked={recipientType === type}
-                onChange={() => setRecipientType(type)}
-              />
-              {t(type)}
-            </label>
-          ))}
-        </div>
-        {recipientType === 'collective' ? (
-          <p className="text-sm text-muted-foreground">{t('collectiveHint')}</p>
-        ) : null}
-      </fieldset>
+    <form
+      className="space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void save();
+      }}
+    >
       <div className="space-y-1.5">
         <Label htmlFor="alias">{t('aliasLabel')}</Label>
         <Input
           id="alias"
           value={alias}
-          onChange={(e) => setAlias(e.target.value)}
+          onChange={(event) => setAlias(event.target.value)}
           placeholder={t('aliasPlaceholder')}
-          className="h-14 text-lg"
+          className="h-12"
           autoComplete="off"
-          disabled={step !== 'alias' || collectorId !== null}
+          required
+          disabled={busy || Boolean(collector)}
         />
       </div>
-      {(step === 'alias' || step === 'rejected') && (
-        <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label htmlFor="manualCode">{f('lightningWallet')}</Label>
+        <div className="flex gap-2">
+          <Input
+            id="manualCode"
+            value={wallet}
+            onChange={(event) => setWallet(event.target.value)}
+            placeholder={t('walletPlaceholder')}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="off"
+            inputMode="email"
+            className="h-12 min-w-0 flex-1"
+            disabled={busy || hasWallet}
+          />
           <Button
-            size="pwa"
-            onClick={step === 'alias' ? startScan : () => setStep('scanning')}
-            disabled={busy || alias.trim().length === 0}
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label={t('scanButton')}
+            className="h-12"
+            disabled={busy || hasWallet}
+            onClick={() => setQrOpen(true)}
           >
-            <ScanLine aria-hidden="true" />
-            {t('scanButton')}
-          </Button>
-          {provisioningEnabled ? (
-            <Button size="pwa" variant="outline" onClick={() => setMessage(t('provisioningTodo'))}>
-              {t('issueWalletButton')}
-            </Button>
-          ) : null}
-        </div>
-      )}
-      {step === 'rejected' ? (
-        <p role="alert" className="flex items-center gap-2 text-sm text-destructive">
-          <OctagonX aria-hidden="true" className="size-4 shrink-0" />
-          {message}
-        </p>
-      ) : null}
-      {step === 'validated' && payTarget ? (
-        <div className="space-y-4">
-          <p className="flex items-center gap-2 font-display text-sm font-medium text-primary">
-            <CircleCheck aria-hidden="true" className="size-5 shrink-0" />
-            {t('receiveOnlyOk')}
-          </p>
-          <p className="break-all font-mono text-xs text-muted-foreground">{payTarget}</p>
-          {walletChecking ? (
-            <p className="text-sm text-muted-foreground">{t('walletChecking')}</p>
-          ) : null}
-          <Button size="pwa" onClick={() => setStep('done')} data-testid="finish-pending">
-            {pendingAuth ? t('finishPending') : t('finishRegistration')}
+            <QrCode aria-hidden="true" />
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">{f('walletHint')}</p>
+      </div>
+      <details className="rounded-lg border border-border bg-card px-3 py-2">
+        <summary className="cursor-pointer py-1 text-sm">{f('groupOptions')}</summary>
+        <fieldset className="mt-3 space-y-2" disabled={busy || Boolean(collector)}>
+          <legend className="sr-only">{t('recipientType')}</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {(['individual', 'collective'] as const).map((type) => (
+              <label key={type} className="flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="recipientType"
+                  checked={recipientType === type}
+                  onChange={() => setRecipientType(type)}
+                />
+                {t(type)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {provisioningEnabled ? (
+          <p className="mt-2 text-xs text-muted-foreground">{t('provisioningTodo')}</p>
+        ) : null}
+      </details>
+      <p className="text-xs text-muted-foreground">{t('onlineRegistration')}</p>
+      {error ? (
+        <div role="alert" className="space-y-1 text-sm text-destructive">
+          <p>{error}</p>
+          {collector ? <p className="text-foreground">{f('walletRetry')}</p> : null}
+        </div>
       ) : null}
-      {message && step !== 'rejected' ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          {message}
-        </p>
-      ) : null}
-      <Drawer.Root open={step === 'scanning'} onOpenChange={(open) => !open && setStep('alias')}>
+      <Button
+        type="submit"
+        size="pwa"
+        disabled={busy || !alias.trim() || Boolean(initialCollectorId && !collector)}
+      >
+        {busy ? f('savingCollector') : initialCollectorId ? f('saveWallet') : f('saveCollector')}
+      </Button>
+      <Drawer.Root open={qrOpen} onOpenChange={setQrOpen}>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-40 bg-foreground/40" />
-          <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[92vh] flex-col rounded-t-2xl bg-background p-4">
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
-            <Drawer.Title className="mb-3 font-display text-base font-medium">
+          <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[85dvh] max-w-lg overflow-y-auto rounded-t-2xl bg-background p-4">
+            <Drawer.Title className="mb-2 font-display text-lg font-bold">
               {t('scanTitle')}
             </Drawer.Title>
-            <div className="space-y-4 overflow-y-auto">
-              <QrScanner onResult={(raw) => void submitCode(raw)} />
-              {message ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {message}
-                </p>
-              ) : null}
-              <form
-                className="space-y-2"
-                onSubmit={(e: FormEvent<HTMLFormElement>) => {
-                  e.preventDefault();
-                  void submitCode(manualCode);
-                }}
-              >
-                <Label htmlFor="manualCode">{t('manualCodeLabel')}</Label>
-                <Input
-                  id="manualCode"
-                  value={manualCode}
-                  onChange={(e) => setManualCode(e.target.value)}
-                  placeholder={t('walletPlaceholder')}
-                />
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="pwa"
-                  disabled={busy || manualCode.trim().length === 0}
-                >
-                  {t('useCodeButton')}
-                </Button>
-              </form>
-              <Button
-                type="button"
-                variant="ghost"
-                size="pwa"
-                onClick={() => setStep('done')}
-                data-testid="skip-wallet"
-              >
-                {t('skipWallet')}
+            <Drawer.Description className="mb-3 text-sm text-muted-foreground">
+              {f('scanWalletHint')}
+            </Drawer.Description>
+            <QrScanner
+              onResult={(raw) => {
+                setWallet(raw);
+                setQrOpen(false);
+              }}
+            />
+            <Drawer.Close asChild>
+              <Button variant="outline" className="mt-3 w-full">
+                {f('close')}
               </Button>
-            </div>
+            </Drawer.Close>
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
-    </div>
+    </form>
   );
 }

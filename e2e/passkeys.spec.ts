@@ -40,7 +40,7 @@ async function account(code: string) {
 }
 async function enroll(page: Page) {
   await page.getByRole('button', { name: 'Set up phone security', exact: true }).click();
-  await expect(page.getByText('Phone security is ready.', { exact: false })).toBeVisible();
+  await page.waitForURL(/\/weigh$/);
   await expect
     .poll(async () => (await (await page.request.get('/api/auth/session')).json()).user?.authMethod)
     .toBe('passkey');
@@ -68,7 +68,7 @@ test('bootstrap once, phone enrollment, username-free sign-in, password retireme
   await page.context().clearCookies();
   await page.goto('/login');
   await page.getByRole('button', { name: 'Sign in with phone security' }).click();
-  await page.waitForURL(/\/setup$/);
+  await page.waitForURL(/\/weigh$/);
   expect((await (await page.request.get('/api/auth/session')).json()).user.id).toBe(user.id);
   await page.context().clearCookies();
   await page.goto('/login');
@@ -78,7 +78,7 @@ test('bootstrap once, phone enrollment, username-free sign-in, password retireme
   await expect(page.getByRole('alert')).toBeVisible();
 
   await page.getByRole('button', { name: 'Sign in with phone security' }).click();
-  await page.waitForURL(/\/setup$/);
+  await page.waitForURL(/\/weigh$/);
   const credentials = await resetStaffPhoneAccess(getDb(), [user.phone]);
   expect((await page.request.get('/api/v1/sessions/current')).status()).toBe(401);
   await page.goto('/login');

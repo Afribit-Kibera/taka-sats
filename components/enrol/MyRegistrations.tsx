@@ -2,7 +2,8 @@
 
 'use client';
 
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Nfc, Wallet } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useApi } from '@/components/console/hooks';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ type Row = { id: string; alias: string; publicCode: string };
  */
 export function MyRegistrations() {
   const t = useTranslations('Enrol.mine');
+  const f = useTranslations('Field');
   const { data, error, loading, reload } = useApi<{ collectors: Row[] }>(
     '/collectors?status=pending&limit=50',
   );
@@ -67,7 +69,22 @@ export function MyRegistrations() {
                 <span className="block truncate font-medium">{c.alias}</span>
                 <span className="font-mono text-xs text-muted-foreground">{c.publicCode}</span>
               </span>
-              <span className="shrink-0 text-xs font-medium">{t('waiting')}</span>
+              <div className="flex shrink-0 items-center">
+                <Link
+                  href={`/enrol?collector=${encodeURIComponent(c.id)}`}
+                  aria-label={f('addWalletFor', { alias: c.alias })}
+                  className="flex size-11 items-center justify-center rounded-lg text-primary"
+                >
+                  <Wallet aria-hidden="true" className="size-5" />
+                </Link>
+                <Link
+                  href={`/cards?collector=${encodeURIComponent(c.id)}`}
+                  aria-label={f('linkNfc', { alias: c.alias })}
+                  className="flex size-11 items-center justify-center rounded-lg text-primary"
+                >
+                  <Nfc aria-hidden="true" className="size-5" />
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

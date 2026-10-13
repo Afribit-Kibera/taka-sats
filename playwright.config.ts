@@ -53,7 +53,8 @@ export default defineConfig({
     command: `pnpm ${process.env.E2E_WITH_SERVICE_WORKER === '1' ? 'build' : 'build:turbo'} && pnpm exec next start -p ${PORT}`,
     url: `http://localhost:${PORT}/login`,
     reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    // The production webpack/Serwist build includes tracing on Windows and cold CI hosts.
+    timeout: process.env.E2E_WITH_SERVICE_WORKER === '1' ? 600_000 : 180_000,
     stdout: 'pipe',
     stderr: 'pipe',
     env: { E2E: '1', ...E2E_ENV },

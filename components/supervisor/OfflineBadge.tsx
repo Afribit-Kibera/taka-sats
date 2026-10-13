@@ -31,8 +31,8 @@ export function OfflineBadge({ className }: { readonly className?: string }) {
         className,
       )}
     >
-      <Icon aria-hidden="true" className="size-4" />
-      {online ? t('online') : t('offlineReady')}
+      <Icon aria-hidden="true" className="size-4 shrink-0" />
+      <span className="min-w-0 break-words">{online ? t('online') : t('offlineReady')}</span>
     </span>
   );
 }

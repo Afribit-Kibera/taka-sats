@@ -44,9 +44,7 @@ test('supervisor issues a pending identity card without authorizing payable work
 
   await login(page, FIELD_SUPERVISOR, '/enrol');
   await page.fill('#alias', 'Pending Card E2E');
-  await page.getByRole('button', { name: 'Scan their wallet QR' }).click();
-  await expect(page.getByTestId('skip-wallet')).toBeVisible();
-  await page.getByTestId('skip-wallet').click();
+  await page.getByRole('button', { name: 'Save collector', exact: true }).click();
   const publicCode = await page.getByTestId('public-code').innerText();
   await expect(page.getByTestId('pending-note')).toBeVisible();
   await page.getByRole('link', { name: 'Write or print a card' }).click();

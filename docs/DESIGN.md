@@ -234,9 +234,11 @@ All mono usages set `font-variant-numeric: tabular-nums` so columns of figures a
 
 - **One primary action per screen**, full-width, bottom-anchored, ≥ 56px tall (64px for the weigh-confirm). Green fill, white text.
 - Sync status is a persistent sticky bar (never a toast you can miss) - see §11.3.
-- Multi-step (the weigh flow) is a **Vaul drawer / bottom sheet**, not a route push - keeps the queue context visible behind it and is faster to dismiss.
-- Camera capture is full-bleed with a single shutter control and a visible "scale + waste must be in frame" guide.
-- No hamburger menu. At most a 3-4 item bottom tab bar: **Weigh · Enrol · Queue · Session**.
+- Collection capture is one compact form. Optional QR scans use the inventory **Vaul drawer**.
+- Camera capture uses the phone's capture control with a clear load/display guide and photo thumbnail.
+- No hamburger menu. Bottom actions: **Record · Add collector · Activity**. The content pane scrolls
+  above the footer; it does not place the footer over a focused input or the save action. Text reflows
+  at 200%, and Chrome's `interactive-widget=resizes-content` supports keyboard-height changes.
 
 ### 5.2 Admin dashboard - "console app shell"
 
@@ -461,20 +463,37 @@ The Brand Guidelines single out bordered cards + flourishes as the tell of templ
 
 Wireframe-level, to align implementors. Full behaviour is in `docs/REQUIREMENTS.md` (the FR/US the screen serves is noted).
 
-### 11.1 PWA - Weigh flow (FR-2.1, US-2.1) - a single Vaul sheet, 4 snap steps
+### 11.1 PWA - Collections (FR-2.1, US-2.1; owner revision 8 Oct 2026)
 
-1. **Collector** - big "Tap tag" target with the animated tap glyph; below it, a text button "Search by name" → cached combobox. On resolve: collector alias in `text-h1`, small "not them?" reset.
-2. **Material** - a grid of material chips (icon + localized label), only those with an active rate this session. One tap advances.
-3. **Weight** - a large numeric keypad, value shown in `text-data-lg` mono with `kg`. (BLE auto-fills this later; manual always available.) "Next" primary.
-4. **Photo + confirm** - full-bleed camera with the in-frame guide; shutter; then a review line (`alias · material · 4.2 kg · ≈2,100 sats` - the sats in mono, prefixed `≈` because it's indicative). Confirm = 64px green primary. On confirm: the checkmark draw-on, sheet closes, queue count increments, Sonner "Saved - queued".
+The signed-in entry point is a compact collection area: location and small activity total, installation
+hint when needed, search, approved collector rows, and Add collector. One tap on a row selects them.
+A 44px NFC icon beside each collector opens their optional card assignment. QR/NFC read shortcuts sit
+beside search. NFC is never a prerequisite. Manual names remain the primary way to choose known people.
 
-Never blocks on network. GPS-missing shows an inline amber-free warning (Ink + triangle icon) before allowing save.
+The shared bottom **Record** action uses a collection icon and green fill. It opens manual selection
+from every field screen and cancels an optional NFC scan. Only NFC-icon actions activate NFC; searching,
+adding collectors, opening settings/install and recording collections never start a reader.
 
-### 11.2 PWA - Enrol (FR-1.2, US-1.1)
+Collection entry uses one form: recipient + Change, compact two-column material choices, decimal kg input,
+scale-photo action/thumbnail, location status or explicit failure reason, estimated value, and Confirm.
+The visible details are the review; no separate review page or intermediate Next buttons. Save is 56px
+and commits IndexedDB before success. Double-save protection, photo hashing and payment gates remain.
 
-- One field: **Alias**. Big. Then two buttons: **"Scan their wallet QR"** (BYO, default) and - only if `custody.provisioning_enabled` - **"Issue a wallet"**.
-- Scan path: full-bleed QR scanner → decoded → "Receive-only ✓" check (or a clear reject for a withdraw code) → "Write tag" → hold tag to phone → success.
-- Whole thing is one sheet, works offline (validation deferred).
+### 11.2 PWA - Add collector (FR-1.2, US-1.1; owner revision 8 Oct 2026)
+
+Name and optional Lightning Receive address share one form. A 44px QR icon scans into the wallet field.
+Group registration is in a native disclosure. Save creates the collector then attaches their wallet;
+a failed wallet attachment keeps the same UUID for retry. Skipped wallets can be added from the waiting
+list. Pending authorization is shown honestly; an optional NFC action is available after registration.
+
+The first field load asks camera/location through native APIs, closes the camera, and retains no probe
+data. NFC permission is requested only by its action. Phone enrollment is one concise screen; completing
+it returns to Collections. Settings contains compact permission status, installation and recovery.
+
+Layouts use 16px gutters, 44px secondary targets, 56px primary targets, wrapping names, min-width:0 on
+flex/grid children, device-width viewport and safe-area-aware bottom tabs: Collections / Add collector /
+Activity. Test 320, 360 and 390px widths plus keyboard-height and text expansion. The normal form replaces
+the former four-step sheet; QR camera scans still use the inventory Vaul drawer. No new dependencies.
 
 ### 11.3 PWA - Sync status (FR-4.3, US-4.3)
 

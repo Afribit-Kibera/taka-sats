@@ -2,9 +2,9 @@
 
 'use client';
 
-import { Search } from 'lucide-react';
+import { Nfc, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,8 @@ export function CollectorLookup({
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Summary[]>([]);
   const [searching, setSearching] = useState(false);
+  const scan = useRef<AbortController | null>(null);
+  useEffect(() => () => scan.current?.abort(), []);
 
   const resolveTag = useCallback(
     async (serial: string) => {
@@ -52,13 +54,21 @@ export function CollectorLookup({
       return;
     }
     const controller = new AbortController();
+    scan.current?.abort();
+    scan.current = controller;
     setScanning(true);
     setTagMessage(t('holdTag'));
-    startTagScan((serial) => void resolveTag(serial), controller.signal).catch(() => {
-      setTagMessage(t('scanError'));
+    startTagScan((serial) => {
+      controller.abort();
+      scan.current = null;
       setScanning(false);
+      void resolveTag(serial).catch(() => setTagMessage(t('scanError')));
+    }, controller.signal).catch(() => {
+      if (!controller.signal.aborted) {
+        setTagMessage(t('scanError'));
+        setScanning(false);
+      }
     });
-    return () => controller.abort();
   }, [resolveTag, t]);
 
   useEffect(() => {
@@ -87,6 +97,7 @@ export function CollectorLookup({
         <TapGlyph className="size-16 text-primary" />
         {isWebNfcAvailable() ? (
           <Button size="pwa" variant="outline" onClick={startScan} disabled={scanning}>
+            <Nfc aria-hidden="true" />
             {scanning ? t('scanning') : t('tapButton')}
           </Button>
         ) : (

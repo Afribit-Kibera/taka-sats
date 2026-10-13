@@ -28,7 +28,7 @@ export function LoginForm() {
       setError(t('phoneFailed'));
       return;
     }
-    router.push(role === 'admin' || role === 'hub_lead' ? '/admin' : '/setup');
+    router.push(role === 'admin' || role === 'hub_lead' ? '/admin' : '/weigh');
     router.refresh();
   }
   async function phoneSignIn() {
@@ -78,14 +78,7 @@ export function LoginForm() {
       <p className="text-sm text-muted-foreground">{t('firstLogin')}</p>
       <div className="space-y-1.5">
         <Label htmlFor="identifier">{t('identifier')}</Label>
-        <Input
-          id="identifier"
-          name="identifier"
-          type="text"
-          autoComplete="username"
-          required
-          autoFocus
-        />
+        <Input id="identifier" name="identifier" type="text" autoComplete="username" required />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">{t('password')}</Label>

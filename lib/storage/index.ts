@@ -26,23 +26,12 @@ import {
  * anything else a browser can execute) served from the app's own origin would run script in the
  * session of whoever opens it — a supervisor could escalate to an admin that way.
  */
-export const ALLOWED_PHOTO_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-] as const;
-export type AllowedPhotoType = (typeof ALLOWED_PHOTO_TYPES)[number];
-
-/** The bare media type of a `Content-Type` header (no parameters), lower-cased. */
-export function baseMediaType(contentType: string): string {
-  return (contentType.split(';')[0] ?? '').trim().toLowerCase();
-}
-
-export function isAllowedPhotoType(contentType: string): contentType is AllowedPhotoType {
-  return (ALLOWED_PHOTO_TYPES as readonly string[]).includes(baseMediaType(contentType));
-}
+export {
+  ALLOWED_PHOTO_TYPES,
+  baseMediaType,
+  isAllowedPhotoType,
+  type AllowedPhotoType,
+} from './photo-types';
 
 export class StorageConfigError extends Error {
   constructor(missing: string) {

@@ -19,7 +19,6 @@ test('a refused collection shows its reason and can be sent again once fixed', a
   test.setTimeout(150_000);
   await login(page, FIELD_SUPERVISOR, '/enrol');
   await page.goto('/weigh');
-  await page.getByRole('button', { name: /Record a collection/ }).click();
   await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
 
   await context.setOffline(true);

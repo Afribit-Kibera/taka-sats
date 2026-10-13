@@ -15,9 +15,7 @@ import { errorResponse } from '@/lib/api/errors';
 import { requireScope } from '@/lib/auth/session';
 import { sha256HexBytes } from '@/lib/sync/contentHash';
 import { ALLOWED_PHOTO_TYPES, baseMediaType, isAllowedPhotoType, putPhoto } from '@/lib/storage';
-
-/** Hard cap on an upload — a downscaled JPEG is well under this (M3-5). */
-const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+import { MAX_PHOTO_BYTES } from '@/lib/storage/photo-types';
 
 const sha256Schema = z.string().regex(/^[0-9a-f]{64}$/, 'expected a 64-char hex sha256');
 

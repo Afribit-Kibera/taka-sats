@@ -27,6 +27,14 @@ All notable changes to this project are recorded here. The format follows
 
 ### Changed
 
+- Global manual Record action; NFC scans/writes require an explicit icon tap. Cardless end-to-end
+  browser coverage, cancellation/late-read protection, atomic offline evidence/outbox saves, and shared
+  photo type/size validation prevent partial captures and permanently rejected upload queues.
+
+- Compact supervisor app: Collections list with one-tap recipient selection, a single collection form,
+  name and Receive wallet together, optional NFC icons, automatic camera/location prompts and session
+  download, three mobile tabs, safe-area spacing and phone-first layouts. Enrollment and payout gates remain.
+
 - The operating-wallet API is read-only and shows queued liabilities. Funding happens externally;
   historical treasury records remain readable, but in-app funding mutation routes return 410.
 - Live-rail smoke tests now require supervised `--pay-real` before creating any collection work.

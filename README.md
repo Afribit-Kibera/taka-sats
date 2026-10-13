@@ -7,7 +7,7 @@ and pay them over Bitcoin Lightning. Every collection and every payment goes int
 anyone can verify.
 
 [![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-blue.svg)](LICENSE)
-[![Status: pilot ready, demo mode](<https://img.shields.io/badge/status-pilot%20ready%20(demo%20mode)-orange.svg>)](#status)
+[![Status: field pilot](https://img.shields.io/badge/status-field%20pilot-green.svg)](#status)
 
 [About](https://taka.afribit.africa/about) ·
 [Run it for your community](docs/GETTING_STARTED.md) ·
@@ -22,7 +22,8 @@ circular economy programme can run its own copy.
 
 A supervisor identifies a collector, weighs the material and takes a photo of the scale, all on a
 phone that works without internet. When the phone reconnects, the record is checked and sealed.
-A second person approves the payment, and the collector receives sats in a wallet they control.
+Eligible work pays through the worker; exceptions need another staff member's review. The collector
+receives sats in a wallet they control. NFC cards are optional.
 
 ## The problem
 
@@ -36,14 +37,16 @@ without trusting anyone's word.
 
 ## How it works
 
-1. **Identify.** Staff find the collector by name, code or QR. Every collector is approved by a
+1. **Identify.** Tap the shared **Record** action and choose the collector by name. Code/QR lookup
+   and NFC-icon actions are optional shortcuts. Every collector is approved by a
    staff member before they can be paid.
 2. **Weigh and photograph.** The weight comes from a scale. A photo shows the material, the scale
    and its display. The phone saves everything locally, even with no signal.
 3. **Check and seal.** On reconnecting, each record is sealed so edits are visible. The system
    checks the rate, the session and the supervisor, and flags anything unusual.
-4. **Pay.** A second person approves the payment. The system calculates the amount once, on the
-   server, and sends it to the collector's own verified wallet.
+4. **Pay.** The worker checks scale evidence, recipient, session, rates and anomalies. Eligible work
+   can pay automatically; exceptions require a distinct reviewer. The server calculates the binding
+   amount and sends it to the collector's own verified Receive wallet. No card is required.
 
 ## Built on open tools
 
@@ -53,8 +56,8 @@ without trusting anyone's word.
   collector. A QR code or NFC tag is only a pointer to an identity. It cannot spend or receive
   anything.
 - **Any wallet provider.** The hot wallet that pays collectors, and the multisig pool that funds
-  it, are both pluggable. [`docs/providers/`](docs/providers/README.md) states what a provider
-  must offer, and [`docs/TREASURY.md`](docs/TREASURY.md) explains how funds are held and approved.
+  it, are both pluggable. Programme funding happens outside the app; Taka Sats reads the operational
+  hot-wallet balance. [`docs/providers/`](docs/providers/README.md) states what a provider must offer.
 - **Open source, self hostable.** The code is free to read, copy and run under the AGPL licence.
   Every setting lives in a configuration file, so a programme in another city changes a file, not
   the code.
@@ -88,11 +91,11 @@ Read it in full in [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 Taka Sats is **ready for a supervised pilot**. It runs in **demo mode** by default: payments are
 simulated and no real money moves.
 
-|                        |                                                                                                                                                                                                                                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Working and tested** | Collector approval, offline capture, sync, the ledger and its public verifier, payments with second person approval, the treasury funding vote (a recorded vote that refills the hot wallet), reconciliation against recycler sales, anomaly flags, public totals               |
-| **Not yet verified**   | Real Lightning payments through Blink or LNbits, and a real Blink balance read. The code is checked against Blink's published schema and a tool (`pnpm provider:check`) exists for the first supervised test with a tiny amount, but it has not been run against a live account |
-| **Not built**          | Connected scales, automatic reading of the scale display, a read only view of the pool's own balance, offline enrolment of new collectors, Swahili and Sheng translations (placeholders today)                                                                                  |
+|                             |                                                                                                                                                                                                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Working and tested**      | Collector approval, cardless offline capture/sync, phone passkeys, ledger/checkpoints, Receive wallets, risk-based worker payouts and distinct exception review, reconciliation, anomalies and public totals                                                                     |
+| **Live verification**       | Blink balance and a supervised 1-sat payment were verified during pilot preparation. New release payout stories use an isolated fake rail; physical Android/scale calibration still needs field evidence                                                                         |
+| **Not built or incomplete** | Connected scales/full V1 proof, offline enrollment, background draining while the app is closed, external pool balance, off-host backup operations and reviewed Swahili/Sheng translations. Scale-display OCR exists as derived evidence; it does not replace the physical scale |
 
 ## Get involved
 

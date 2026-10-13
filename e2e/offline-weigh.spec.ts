@@ -21,11 +21,10 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
   await page.fill('#identifier', FIELD_SUPERVISOR.phone);
   await page.fill('#password', FIELD_SUPERVISOR.password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.waitForURL('**/setup');
+  await page.waitForURL('**/weigh');
 
   // ── prime the weigh cache (online) ────────────────────────────────────────
   await page.goto('/weigh');
-  await page.getByRole('button', { name: /Record a collection/ }).click();
   await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
 
   if (process.env.E2E_WITH_SERVICE_WORKER === '1') {
@@ -35,7 +34,6 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
     if (!(await page.evaluate(() => !!navigator.serviceWorker.controller))) {
       // A page opened before the first install may need one online navigation to join its scope.
       await page.reload();
-      await page.getByRole('button', { name: /Record a collection/ }).click();
     }
     await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   }
@@ -46,24 +44,18 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
   if (process.env.E2E_WITH_SERVICE_WORKER === '1') {
     // A full offline reload exercises the installed shell, rather than only a warm React screen.
     await page.reload();
-    await page.getByRole('button', { name: /Record a collection/ }).click();
     await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
   }
 
   // collector — from the cached list, no network
   await page.getByRole('textbox', { name: 'Name, group or public code' }).fill('Amina');
   await page.getByRole('button', { name: /Amina E2E/ }).click();
-  await page.getByRole('button', { name: 'Use selected collector' }).click();
 
   // material
   await page.getByRole('button', { name: /PET/ }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
 
   // weight — 2.5 kg on the keypad
-  for (const key of ['2', '.', '5']) {
-    await page.getByRole('button', { name: key, exact: true }).click();
-  }
-  await page.getByRole('button', { name: 'Next' }).click(); // the keypad's submit
+  await page.locator('#weight').fill('2.5');
 
   // photo — set the hidden file input directly
   await page.setInputFiles('input[type="file"]', SHOT);
@@ -73,7 +65,6 @@ test('offline: weigh a collector end to end → event is queued in IndexedDB', a
   await expect(reason).toBeVisible();
   await reason.fill('e2e: headless, no GPS');
 
-  await page.getByRole('button', { name: 'Continue' }).click(); // to the review screen
   await page.getByRole('button', { name: 'Confirm collection' }).click();
   await expect(page.getByText('Saved and queued')).toBeVisible();
 

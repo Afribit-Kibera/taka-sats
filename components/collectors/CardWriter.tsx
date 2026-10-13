@@ -137,6 +137,7 @@ export function CardWriter({
     let serial: string;
     try {
       serial = await writeCollectorCard(chosen.reference, controller.signal);
+      if (controller.signal.aborted) return;
     } catch (error) {
       setStep({ kind: 'pick' });
       if (!controller.signal.aborted)
@@ -149,6 +150,7 @@ export function CardWriter({
     }
     try {
       const res = await fetch(`/api/v1/collectors/${chosen.id}/tags`, {
+        signal: controller.signal,
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ newTagId: serial }),
@@ -174,15 +176,20 @@ export function CardWriter({
     setStep({ kind: 'reading' });
     try {
       const card = await readCard(controller.signal);
+      if (controller.signal.aborted) return;
       const payload = card.texts.find((text) => text.startsWith('takasats:')) ?? null;
-      const res = await fetch(`/api/v1/tags/${encodeURIComponent(card.serial)}`);
+      const res = await fetch(`/api/v1/tags/${encodeURIComponent(card.serial)}`, {
+        signal: controller.signal,
+      });
       let body = res.ok
         ? ((await res.json()) as { collector: { alias: string; publicCode: string } })
         : null;
       // Pending tags deliberately cannot resolve through the weighing lookup.
       // Check the selected identity's stored mapping without changing eligibility.
       if (!body && res.status === 409 && chosen && payload === chosen.reference.payload) {
-        const detailResponse = await fetch(`/api/v1/collectors/${chosen.id}`);
+        const detailResponse = await fetch(`/api/v1/collectors/${chosen.id}`, {
+          signal: controller.signal,
+        });
         if (detailResponse.ok) {
           const detail = (await detailResponse.json()) as { collector: Detail };
           if (detail.collector.status !== 'revoked' && detail.collector.nfcTagId === card.serial) {
@@ -216,6 +223,7 @@ export function CardWriter({
     setStep({ kind: 'reading' });
     try {
       const card = await readCard(controller.signal);
+      if (controller.signal.aborted) return;
       if (
         !card.serial ||
         !card.texts.includes(chosen.reference.payload) ||
@@ -226,6 +234,7 @@ export function CardWriter({
         return;
       }
       const response = await fetch(`/api/v1/collectors/${chosen.id}/tags`, {
+        signal: controller.signal,
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ newTagId: card.serial }),
@@ -246,60 +255,70 @@ export function CardWriter({
   const busy = step.kind === 'writing' || step.kind === 'reading';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{t('intro')}</p>
       {!supported ? (
         <p className="rounded-lg border border-border bg-card p-4 text-sm">{t('unavailable')}</p>
       ) : null}
-      <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-        <li>{t('stepPick')}</li>
-        <li>{t('stepWrite')}</li>
-        <li>{t('stepPrint')}</li>
-      </ol>
+      <details className="text-sm text-muted-foreground">
+        <summary className="cursor-pointer py-2">{t('instructions')}</summary>
+        <ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>{t('stepPick')}</li>
+          <li>{t('stepWrite')}</li>
+          <li>{t('stepPrint')}</li>
+        </ol>
+      </details>
 
-      <div className="space-y-2">
-        <label htmlFor="card-search" className="font-display text-sm font-bold">
-          {t('searchLabel')}
-        </label>
-        <div className="relative">
-          <Search
-            aria-hidden="true"
-            className="absolute left-3 top-3.5 size-4 text-muted-foreground"
-          />
-          <Input
-            id="card-search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('searchPlaceholder')}
-            className="min-h-11 pl-9"
-            disabled={busy}
-            autoComplete="off"
-          />
+      <details open={!initialCollectorId} className="space-y-2">
+        <summary className="cursor-pointer py-2 font-display text-sm">{t('searchLabel')}</summary>
+        <div className="space-y-2">
+          <label htmlFor="card-search" className="font-display text-sm font-bold">
+            {t('searchLabel')}
+          </label>
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="absolute left-3 top-3.5 size-4 text-muted-foreground"
+            />
+            <Input
+              id="card-search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className="min-h-11 pl-9"
+              disabled={busy}
+              autoComplete="off"
+            />
+          </div>
+          <ul className="space-y-2">
+            {(query.trim().length < 2 ? [] : results).map((found) => (
+              <li key={found.id}>
+                <button
+                  type="button"
+                  onClick={() => void choose(found)}
+                  disabled={busy}
+                  className="flex min-h-[52px] w-full items-center justify-between rounded-lg border border-border bg-card px-4 text-left active:bg-secondary"
+                >
+                  <span className="font-display font-bold">{found.alias}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {found.publicCode}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="space-y-2">
-          {(query.trim().length < 2 ? [] : results).map((found) => (
-            <li key={found.id}>
-              <button
-                type="button"
-                onClick={() => void choose(found)}
-                disabled={busy}
-                className="flex min-h-[52px] w-full items-center justify-between rounded-lg border border-border bg-card px-4 text-left active:bg-secondary"
-              >
-                <span className="font-display font-bold">{found.alias}</span>
-                <span className="font-mono text-xs text-muted-foreground">{found.publicCode}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      </details>
 
       {chosen ? (
-        <div className="space-y-4 rounded-xl border border-border bg-card p-5">
+        <div className="space-y-3 rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-3">
             <CreditCard aria-hidden="true" className="size-6 text-primary" />
-            <div>
-              <p className="font-display text-lg font-bold">{chosen.alias}</p>
-              <p className="font-mono text-xs text-muted-foreground">{chosen.reference.payload}</p>
+            <div className="min-w-0">
+              <p className="break-words font-display text-lg font-bold">{chosen.alias}</p>
+              <p className="break-all font-mono text-xs text-muted-foreground">
+                {chosen.reference.payload}
+              </p>
             </div>
           </div>
           {chosen.status === 'pending' ? (
@@ -336,6 +355,7 @@ export function CardWriter({
               disabled={busy}
               onClick={() => void linkWritten()}
             >
+              <Nfc aria-hidden="true" className="size-5" />
               {t('linkWritten')}
             </Button>
           ) : null}

@@ -8,17 +8,18 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePwa } from './PwaProvider';
 
-export function InstallCard() {
+export function InstallCard({ compact = false }: { readonly compact?: boolean }) {
   const t = useTranslations('FieldSetup');
   const { standalone, canInstall, installAccepted, install } = usePwa();
   const [failed, setFailed] = useState(false);
+  if (compact && standalone) return null;
   return (
-    <section className="space-y-4 rounded-2xl bg-secondary p-5" aria-labelledby="install-heading">
-      <Smartphone aria-hidden="true" className="size-8 text-primary" />
-      <h2 id="install-heading" className="font-display text-xl font-bold">
+    <section className="space-y-2 rounded-xl bg-secondary p-3" aria-labelledby="install-heading">
+      <h2 id="install-heading" className="flex items-center gap-2 font-display text-sm font-bold">
+        <Smartphone aria-hidden="true" className="size-4 text-primary" />
         {t('installTitle')}
       </h2>
-      <p role="status" className="text-sm">
+      <p role="status" className="text-xs">
         {t(standalone ? 'installed' : installAccepted ? 'openInstalled' : 'installHint')}
       </p>
       {!standalone && !installAccepted ? (
@@ -34,7 +35,7 @@ export function InstallCard() {
             {t('installButton')}
           </Button>
         ) : (
-          <p className="text-sm">{t('manualInstall')}</p>
+          <p className="text-xs">{t('manualInstall')}</p>
         )
       ) : null}
       {failed ? (

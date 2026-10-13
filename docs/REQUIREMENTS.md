@@ -30,10 +30,10 @@ self-approval bypass is introduced.
 
 ### Current implementation override (2026-10-06, D-29)
 
-Supervisor launch clarification (2026-10-08): public `/install` detects the available browser install
-prompt and provides manual Chrome instructions; installed launch is `/setup`. Staff setup requests
-camera/location/NFC through separate user gestures, shows denied/unsupported states and explicitly
-downloads active-session caches. Registration opens the selected recipient's blank-card writer.
+Supervisor launch clarification (2026-10-13): public `/install` detects the available browser install
+prompt and provides manual Chrome instructions; installed launch is `/weigh`. Required phone enrollment
+appears before field access. Camera/location ask on first field load; NFC only starts from its icon.
+Active-session caches download automatically. Registration offers the optional selected-card writer.
 These changes grant no payment scope and do not change recipient authorization. Private API reads
 are network-only; IndexedDB retains offline field capture. See [supervisor setup](SUPERVISOR_SETUP.md).
 
@@ -158,6 +158,18 @@ Decisions made to unblock the build. Each can be revisited, but code is written 
 | D-28 | **A multisig pool funds a capped, pluggable hot wallet.** Stewards (not field supervisors) hold an M of N multisig pool. A recorded vote refills a small hot wallet behind `LightningProvider`, which pays collectors automatically. Taka Sats never holds pool keys and never moves pool funds. Both roles are filled by any provider that meets `docs/providers/README.md`. | Payouts must be automatic, so the key on the server must guard little. ADR-0020, `docs/TREASURY.md`. |
 
 ---
+
+**2026-10-08 mobile-flow decision:** known collectors are selected by name in Collections. NFC is an
+optional identity icon/shortcut. Name and Receive wallet share an enrollment form; collection material,
+kg, scale photo, location/reason and estimated value share one reviewable capture form. Camera/location
+request native permission on first signed-in load; install and NFC remain gesture-driven. Session data
+primes automatically. Collector approval, offline persistence, wallet verification and worker payouts
+are unchanged. This supersedes the earlier tag-first and multi-screen UI descriptions below.
+
+**2026-10-13 NFC opt-in clarification:** the global Record action always opens manual recipient
+selection. NFC scanning/writing starts only after pressing an NFC-icon action and stops when cancelled
+or returning to manual selection. No tag is needed for any registration, collection, sync or payment.
+Complete local evidence and delivery entries commit atomically; upload types/limits match the server.
 
 ## 3. Actors, roles, and auth model
 

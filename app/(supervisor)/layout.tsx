@@ -6,7 +6,9 @@ import { auth } from '@/auth';
 import { ModeBanner } from '@/components/console/ModeBanner';
 import { BottomNav } from '@/components/supervisor/BottomNav';
 import { SyncManager } from '@/components/supervisor/SyncManager';
-import { SetupLink } from '@/components/supervisor/InstallCard';
+import { FieldHeader } from '@/components/supervisor/FieldHeader';
+import { FieldContent } from '@/components/supervisor/FieldContent';
+import { FieldPermissions } from '@/components/supervisor/FieldPermissions';
 import { isRole, roleHasScope } from '@/lib/auth/permissions';
 import { DeviceSetup } from '@/components/supervisor/DeviceSetup';
 import { getTranslations } from 'next-intl/server';
@@ -25,21 +27,23 @@ export default async function SupervisorLayout({ children }: { readonly children
   const t = await getTranslations('FieldSetup');
   const needsSecurity = session?.user.phoneSetupRequired;
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background shadow-[0_0_50px_rgb(20_20_20/0.08)]">
-      <ModeBanner />
-      <SetupLink />
-      {!needsSecurity ? <SyncManager /> : null}
-      <main className="flex-1">
-        {needsSecurity ? (
-          <div className="space-y-5 p-5">
-            <h1 className="font-display text-2xl font-bold">{t('title')}</h1>
-            <DeviceSetup securityRequired />
-          </div>
-        ) : (
-          children
-        )}
-      </main>
-      {!needsSecurity ? <BottomNav /> : null}
-    </div>
+    <FieldPermissions enabled={!needsSecurity} staffId={session!.user.id}>
+      <div className="mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-background shadow-[0_0_50px_rgb(20_20_20/0.08)]">
+        <ModeBanner />
+        <FieldHeader />
+        {!needsSecurity ? <SyncManager /> : null}
+        <FieldContent>
+          {needsSecurity ? (
+            <div className="space-y-5 p-5">
+              <h1 className="font-display text-2xl font-bold">{t('title')}</h1>
+              <DeviceSetup securityRequired />
+            </div>
+          ) : (
+            children
+          )}
+        </FieldContent>
+        {!needsSecurity ? <BottomNav /> : null}
+      </div>
+    </FieldPermissions>
   );
 }

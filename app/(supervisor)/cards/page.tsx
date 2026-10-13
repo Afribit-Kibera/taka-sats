@@ -13,7 +13,7 @@ export default async function CardsPage({
   const { collector } = await searchParams;
 
   return (
-    <div className="space-y-6 px-5 py-6">
+    <div className="space-y-4 p-4">
       <h1 className="font-display text-xl font-bold tracking-[-0.02em]">{t('title')}</h1>
       <CardWriter initialCollectorId={collector} />
     </div>

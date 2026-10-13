@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readCard, writeCollectorCard } from './nfc';
+import { readCard, startTagScan, writeCollectorCard } from './nfc';
 
 const card = { payload: 'takasats:TS-KBR-0042', url: 'https://taka.afribit.africa/c/TS-KBR-0042' };
 type Reading = {
@@ -21,7 +21,11 @@ function reading(payload: string, url = card.url, serial = '04:AB:CD'): Reading 
 function install(result?: Reading) {
   const writes = vi.fn().mockResolvedValue(undefined);
   const signals: AbortSignal[] = [];
+  const instances: Reader[] = [];
   class Reader {
+    constructor() {
+      instances.push(this);
+    }
     listeners = new Map<string, (event: Reading) => void>();
     write = writes;
     addEventListener(type: string, listener: (event: Reading) => void) {
@@ -33,11 +37,29 @@ function install(result?: Reading) {
     }
   }
   vi.stubGlobal('NDEFReader', Reader);
-  return { writes, signals };
+  return { writes, signals, instances };
 }
 afterEach(() => vi.unstubAllGlobals());
 
 describe('identity-only NFC cards', () => {
+  it('manual cancellation suppresses already queued NFC readings', async () => {
+    const { instances } = install();
+    const controller = new AbortController();
+    const resolve = vi.fn();
+    await startTagScan(resolve, controller.signal);
+    controller.abort();
+    instances[0]!.listeners.get('reading')?.(reading(card.payload));
+    expect(resolve).not.toHaveBeenCalled();
+  });
+  it('never opens the NFC reader for an already-cancelled action', async () => {
+    const { instances } = install();
+    const controller = new AbortController();
+    controller.abort();
+    await expect(startTagScan(vi.fn(), controller.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    expect(instances).toHaveLength(0);
+  });
   it('writes identity and URL, refuses overwrite and verifies the exact read-back', async () => {
     const { writes, signals } = install(reading(card.payload));
     await expect(writeCollectorCard(card)).resolves.toBe('04:AB:CD');

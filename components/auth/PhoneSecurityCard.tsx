@@ -46,6 +46,7 @@ export function PhoneSecurityCard({ required = false }: { readonly required?: bo
     try {
       await authenticateWithPhone(true);
       setStatus((s) => (s ? { ...s, enrolled: true } : s));
+      if (required) router.replace('/weigh');
       router.refresh();
     } catch (e) {
       setError(
@@ -62,7 +63,7 @@ export function PhoneSecurityCard({ required = false }: { readonly required?: bo
   return (
     <section
       aria-labelledby="phone-security-heading"
-      className="space-y-3 rounded-xl border border-border bg-card p-5"
+      className="space-y-3 rounded-xl border border-border bg-card p-4"
     >
       <h2
         id="phone-security-heading"
@@ -72,7 +73,6 @@ export function PhoneSecurityCard({ required = false }: { readonly required?: bo
         {t('title')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('hint')}</p>
-      {required ? <p className="text-sm font-medium">{t('required')}</p> : null}
       <p role="status" className="text-sm">
         {t(status?.enrolled ? 'enrolled' : supported === false ? 'unsupported' : 'ready')}
       </p>
@@ -83,8 +83,8 @@ export function PhoneSecurityCard({ required = false }: { readonly required?: bo
       ) : (
         <Button
           type="button"
-          variant="outline"
-          className="min-h-12 w-full"
+          variant={required ? 'default' : 'outline'}
+          className="min-h-14 w-full"
           disabled={busy || !status || supported !== true}
           onClick={() => void enroll()}
         >
@@ -101,7 +101,10 @@ export function PhoneSecurityCard({ required = false }: { readonly required?: bo
           {t('signInAgain')}
         </Button>
       ) : null}
-      <p className="text-sm text-muted-foreground">{t('recovery')}</p>
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer py-2">{t('help')}</summary>
+        <p>{t('recovery')}</p>
+      </details>
     </section>
   );
 }

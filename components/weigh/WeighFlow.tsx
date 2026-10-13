@@ -1,33 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-
 'use client';
-
 import {
   ArrowLeft,
-  ArrowRight,
   Camera,
   Check,
-  ChevronRight,
   CircleCheck,
-  Clock3,
-  CloudUpload,
   MapPin,
   MapPinOff,
-  Package,
-  Pencil,
   Recycle,
-  Search,
   TriangleAlert,
-  UserPlus,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { OfflineBadge } from '@/components/supervisor/OfflineBadge';
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InstallCard } from '@/components/supervisor/InstallCard';
+import { OPEN_COLLECTION_EVENT } from '@/components/supervisor/field-actions';
+import {
+  ALLOWED_PHOTO_TYPES,
+  MAX_PHOTO_BYTES,
+  isAllowedPhotoType,
+} from '@/lib/storage/photo-types';
 import {
   captureCollectionEvent,
   drainEventQueue,
@@ -37,31 +33,22 @@ import {
   sha256HexBytes,
   type SessionSummary as LocalSummary,
 } from '@/lib/sync';
-import type { CachedCollector, CachedSessionConfig, GeoFix } from '@/types/domain';
+import type {
+  CachedCollector,
+  CachedSessionConfig,
+  GeoFix,
+  RegistrationType,
+} from '@/types/domain';
 import { QUEUE_CHANGED_EVENT } from './SyncStatusIndicator';
 import { WeighCollectorStep } from './WeighCollectorStep';
-import { WeightPad } from './WeightPad';
 
-type Step =
-  | 'loading'
-  | 'blocked'
-  | 'home'
-  | 'collector'
-  | 'material'
-  | 'weight'
-  | 'photo'
-  | 'review'
-  | 'done';
 type Rate = CachedSessionConfig['rates'][number];
-
 const number = new Intl.NumberFormat('en-KE', { maximumFractionDigits: 3 });
 const money = new Intl.NumberFormat('en-KE', { maximumFractionDigits: 2 });
-
 function requestGeo(): Promise<GeoFix> {
-  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+  if (!navigator.geolocation)
     return Promise.resolve({ kind: 'unavailable', reason: 'geolocation-unsupported' });
-  }
-  return new Promise((resolve) => {
+  return new Promise((resolve) =>
     navigator.geolocation.getCurrentPosition(
       (pos) =>
         resolve({
@@ -72,121 +59,49 @@ function requestGeo(): Promise<GeoFix> {
         }),
       (err) => resolve({ kind: 'unavailable', reason: `geolocation-error-${err.code}` }),
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 15_000 },
-    );
-  });
-}
-
-function ScreenHeader({ title, onBack }: { readonly title: string; readonly onBack?: () => void }) {
-  const t = useTranslations('Weigh');
-  return (
-    <header className="flex items-center justify-between gap-3 pb-5">
-      <div className="flex min-w-0 items-center gap-2">
-        {onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full active:bg-accent"
-            aria-label={t('back')}
-          >
-            <ArrowLeft aria-hidden="true" className="size-7" />
-          </button>
-        ) : null}
-        <h1 className="truncate font-display text-2xl font-bold tracking-[-0.035em]">{title}</h1>
-      </div>
-      <OfflineBadge className="shrink-0" />
-    </header>
+    ),
   );
 }
-
-function CollectorChip({ collector }: { readonly collector: CachedCollector }) {
-  const t = useTranslations('Weigh');
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-secondary px-4 py-3">
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card text-primary">
-        <span className="font-display text-xl font-bold">
-          {collector.alias.slice(0, 1).toUpperCase()}
-        </span>
-      </div>
-      <span className="min-w-0">
-        <strong className="block truncate font-display text-lg">{collector.alias}</strong>
-        <span className="block truncate font-mono text-sm text-muted-foreground">
-          {collector.publicCode ?? collector.id}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {t(collector.recipientType === 'collective' ? 'collective' : 'individual')}
-        </span>
-      </span>
-    </div>
-  );
-}
-
-function MaterialTile({
-  rate,
-  selected,
-  onSelect,
-}: {
-  readonly rate: Rate;
-  readonly selected: boolean;
-  readonly onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`relative flex min-h-40 flex-col justify-between rounded-2xl bg-card p-4 text-left transition active:scale-[0.98] ${
-        selected ? 'ring-2 ring-primary' : 'border border-border'
-      }`}
-      aria-pressed={selected}
-    >
-      <div className="flex h-20 w-full items-center justify-center rounded-xl bg-secondary text-primary">
-        <Recycle aria-hidden="true" className="size-12" />
-      </div>
-      <span className="mt-3">
-        <strong className="block font-display text-lg">{rate.material}</strong>
-        <span className="text-sm text-muted-foreground">
-          {money.format(rate.rateFiatMinor / 100)} {rate.fiatCurrency}/kg
-        </span>
-      </span>
-      {selected ? (
-        <span className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Check aria-hidden="true" className="size-5" />
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
+/** Compact capture still commits to IndexedDB before success or network work. */
 export function WeighFlow({
   supervisorId,
-  supervisorName,
 }: {
   readonly supervisorId: string;
   readonly supervisorName?: string | undefined;
 }) {
   const t = useTranslations('Weigh');
-  const home = useTranslations('SupervisorHome');
-  const [step, setStep] = useState<Step>('loading');
+  const f = useTranslations('Field');
+  const [step, setStep] = useState<'loading' | 'blocked' | 'home' | 'form' | 'done'>('loading');
   const [config, setConfig] = useState<CachedSessionConfig | null>(null);
   const [summary, setSummary] = useState<LocalSummary | null>(null);
-  const [blockedReason, setBlockedReason] = useState('');
   const [cacheSource, setCacheSource] = useState<'network' | 'cache' | null>(null);
+  const [blockedReason, setBlockedReason] = useState('');
   const [collector, setCollector] = useState<CachedCollector | null>(null);
+  const [registrationType, setRegistrationType] = useState<RegistrationType>('walk_in');
   const [rate, setRate] = useState<Rate | null>(null);
-  const [weightKg, setWeightKg] = useState(0);
+  const [weight, setWeight] = useState('');
+  const weightKg = Number(weight.replace(',', '.'));
+  const validWeight = /^\d{1,3}([.,]\d{1,3})?$/.test(weight) && weightKg > 0 && weightKg <= 999.999;
   const [photoSha256, setPhotoSha256] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [geo, setGeo] = useState<GeoFix | null>(null);
   const [geoReason, setGeoReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const confirming = useRef(false);
-
+  const photoVersion = useRef(0);
+  const draftVersion = useRef(0);
+  const manualFocus = useRef(false);
+  const invalidateDraft = useCallback(() => {
+    draftVersion.current++;
+    photoVersion.current++;
+  }, []);
   const refreshSummary = useCallback((sessionId?: string) => {
     void sessionSummary(sessionId).then(setSummary);
   }, []);
-
   useEffect(() => {
     let live = true;
     void primeWeighCache().then((result) => {
@@ -203,77 +118,110 @@ export function WeighFlow({
     });
     return () => {
       live = false;
+      invalidateDraft();
     };
-  }, [refreshSummary]);
-
+  }, [refreshSummary, invalidateDraft]);
   useEffect(() => {
     const refresh = () => refreshSummary(config?.sessionId);
     window.addEventListener(QUEUE_CHANGED_EVENT, refresh);
     return () => window.removeEventListener(QUEUE_CHANGED_EVENT, refresh);
   }, [config?.sessionId, refreshSummary]);
-
   useEffect(() => {
-    return () => {
-      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    let frame = 0;
+    const manual = () => {
+      if (confirming.current) return;
+      manualFocus.current = true;
+      setStep((current) => (current === 'form' || current === 'done' ? 'home' : current));
+      frame = requestAnimationFrame(() => {
+        const picker = document.getElementById('collector-picker');
+        if (picker) {
+          picker.focus();
+          manualFocus.current = false;
+        }
+      });
     };
-  }, [photoPreview]);
-
-  const resetForNext = useCallback(() => {
-    setCollector(null);
-    setRate(null);
-    setWeightKg(0);
+    window.addEventListener(OPEN_COLLECTION_EVENT, manual);
+    return () => {
+      window.removeEventListener(OPEN_COLLECTION_EVENT, manual);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  useEffect(() => {
+    if (step !== 'home' || !manualFocus.current) return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById('collector-picker')?.focus();
+      manualFocus.current = false;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [step]);
+  useEffect(
+    () => () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    },
+    [photoPreview],
+  );
+  function selectCollector(next: CachedCollector, method: RegistrationType = 'walk_in') {
+    const version = ++draftVersion.current;
+    photoVersion.current++;
+    setCollector(next);
+    setRegistrationType(method);
+    setRate(config?.rates.length === 1 ? config.rates[0]! : null);
+    setWeight('');
     setPhotoSha256(null);
     setPhotoFile(null);
     setPhotoPreview(null);
+    setPhotoBusy(false);
     setGeo(null);
     setGeoReason('');
     setError(null);
-    setStep('collector');
-  }, []);
-
-  async function onPhoto(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    setStep('form');
+    void requestGeo().then((fix) => {
+      if (draftVersion.current === version) setGeo(fix);
+    });
+  }
+  async function onPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    const version = ++photoVersion.current;
+    setPhotoBusy(true);
+    setPhotoSha256(null);
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setError(null);
-    setPhotoSha256(await sha256HexBytes(await file.arrayBuffer()));
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-    if (!geo) setGeo(await requestGeo());
+    try {
+      if (file.size > MAX_PHOTO_BYTES) {
+        setError(f('photoTooLarge'));
+        return;
+      }
+      if (!file.size || !isAllowedPhotoType(file.type)) throw new Error();
+      const hash = await sha256HexBytes(await file.arrayBuffer());
+      if (photoVersion.current !== version) return;
+      setPhotoFile(file);
+      setPhotoSha256(hash);
+      setPhotoPreview(URL.createObjectURL(file));
+    } catch {
+      if (photoVersion.current === version) setError(f('photoInvalid'));
+    } finally {
+      if (photoVersion.current === version) setPhotoBusy(false);
+    }
   }
-
-  const indicative = useMemo(
-    () =>
-      rate && config
-        ? Math.floor((rate.rateFiatMinor * weightKg * 1_000_000) / config.exchangeRate)
-        : 0,
-    [config, rate, weightKg],
-  );
-  const fiatValue = rate ? (rate.rateFiatMinor * weightKg) / 100 : 0;
-  const pending = summary
-    ? summary.byState.queued + summary.byState.syncing + summary.byState.failed
-    : 0;
-
-  async function syncNow(): Promise<void> {
-    if (!navigator.onLine) return;
-    window.dispatchEvent(new Event(QUEUE_CHANGED_EVENT));
-    await Promise.allSettled([drainPhotoQueue(), drainEventQueue()]);
-    window.dispatchEvent(new Event(QUEUE_CHANGED_EVENT));
-  }
-
-  async function confirm(): Promise<void> {
-    if (!collector || !rate || !config || !photoSha256 || !photoFile) return;
-    // A double tap must never record two collections: the first call owns the save.
-    if (confirming.current) return;
-    const resolvedGeo: GeoFix =
-      geo && geo.kind === 'fix'
-        ? geo
-        : { kind: 'unavailable', reason: geoReason.trim() || 'not-provided' };
-    if (resolvedGeo.kind === 'unavailable' && !geoReason.trim()) {
+  async function confirm() {
+    if (
+      !collector ||
+      !rate ||
+      !config ||
+      !photoSha256 ||
+      !photoFile ||
+      !validWeight ||
+      !geo ||
+      photoBusy ||
+      confirming.current
+    )
+      return;
+    if (geo.kind === 'unavailable' && !geoReason.trim()) {
       setError(t('geoReasonRequired'));
-      setStep('photo');
       return;
     }
-
     confirming.current = true;
     setBusy(true);
     setError(null);
@@ -289,425 +237,273 @@ export function WeighFlow({
           rateFiatMinor: rate.rateFiatMinor,
           exchangeRate: config.exchangeRate,
           photoSha256,
-          geo: resolvedGeo,
-          registrationType: collector.nfcTagId ? 'tap' : 'walk_in',
+          geo: geo.kind === 'fix' ? geo : { kind: 'unavailable', reason: geoReason.trim() },
+          registrationType,
         },
-        { blob: photoFile, sha256: photoSha256, contentType: photoFile.type || 'image/jpeg' },
+        { blob: photoFile, sha256: photoSha256, contentType: photoFile.type },
       );
       window.dispatchEvent(new Event(QUEUE_CHANGED_EVENT));
       setStep('done');
-      if (navigator.onLine) void syncNow();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t('saveFailed'));
+      if (navigator.onLine)
+        void Promise.allSettled([drainPhotoQueue(), drainEventQueue()]).then(() =>
+          window.dispatchEvent(new Event(QUEUE_CHANGED_EVENT)),
+        );
+    } catch {
+      setError(t('saveFailed'));
     } finally {
       confirming.current = false;
       setBusy(false);
     }
   }
-
-  if (step === 'loading') {
-    return <p className="px-5 py-12 text-sm text-muted-foreground">{t('loading')}</p>;
-  }
-
-  if (step === 'blocked') {
+  if (step === 'loading')
+    return <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>;
+  if (step === 'blocked' || !config)
     return (
-      <div className="px-5 py-10">
-        <div className="rounded-2xl border border-dashed border-border px-4 py-10 text-center">
-          <p className="font-display text-lg font-bold">{t('blockedTitle')}</p>
-          <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">{blockedReason}</p>
-        </div>
+      <div className="space-y-2 p-4">
+        <h1 className="font-display text-xl font-bold">{t('blockedTitle')}</h1>
+        <p className="text-sm text-muted-foreground">{blockedReason}</p>
+        <Button asChild variant="outline">
+          <Link href="/setup">{f('phoneSettings')}</Link>
+        </Button>
       </div>
     );
-  }
-
-  if (!config) return null;
-
-  if (step === 'home') {
+  if (step === 'home')
     return (
-      <div className="space-y-5 px-5 pb-8 pt-6">
-        <header className="flex items-center justify-between gap-4">
-          <Image src="/taka-sats-logo.png" alt="Taka Sats" width={176} height={54} priority />
-          <OfflineBadge />
-        </header>
-
-        <section className="pt-2">
-          <h1 className="font-display text-4xl font-bold leading-[1.02] tracking-[-0.045em]">
-            {home('greeting', { name: supervisorName?.split(' ')[0] ?? home('fallbackName') })}
-          </h1>
-          <p className="mt-2 text-lg text-muted-foreground">{home('subtitle')}</p>
-        </section>
-
+      <div className="space-y-4 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 basis-[60%]">
+            <h1 className="break-words font-display text-[clamp(1.25rem,8vw,1.5rem)] font-bold">
+              {f('collectionArea')}
+            </h1>
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin aria-hidden="true" className="size-4 shrink-0" />
+              <span className="break-words">{config.location}</span>
+            </p>
+          </div>
+          <Link href="/session" className="shrink-0 rounded-lg bg-secondary px-3 py-2 text-right">
+            <strong className="block font-mono text-base">
+              {number.format(summary?.totalKg ?? 0)} kg
+            </strong>
+            <span className="text-xs text-muted-foreground">
+              {f('collectionCount', { count: summary?.count ?? 0 })}
+            </span>
+          </Link>
+        </div>
+        <InstallCard compact />
         {cacheSource === 'cache' ? (
-          <p className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2 text-sm text-foreground">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
             <TriangleAlert aria-hidden="true" className="size-4 shrink-0" />
             {t('offlineCache')}
           </p>
         ) : null}
-
-        <button
-          type="button"
-          onClick={resetForNext}
-          className="flex min-h-40 w-full items-center gap-3 rounded-3xl bg-fill-bitcoin p-5 text-left text-foreground shadow-[0_8px_24px_rgb(247_147_26/0.18)] active:bg-fill-bitcoin-pressed sm:gap-5 sm:p-6"
+        <p className="text-sm text-muted-foreground">{f('chooseCollector')}</p>
+        <div
+          id="collector-picker"
+          tabIndex={-1}
+          role="region"
+          aria-label={f('chooseCollector')}
+          className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
-          <Recycle aria-hidden="true" className="size-10 shrink-0 sm:size-16" />
-          <span className="min-w-0 flex-1">
-            <strong className="block font-display text-2xl font-bold leading-none sm:text-3xl">
-              {home('recordTitle')}
-            </strong>
-            <span className="mt-3 block text-base">{home('recordDescription')}</span>
-          </span>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-card sm:size-12">
-            <ArrowRight aria-hidden="true" className="size-6" />
-          </span>
-        </button>
-
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            type="button"
-            onClick={() => setStep('collector')}
-            className="flex min-h-36 flex-col rounded-2xl border border-border bg-card p-4 text-left active:bg-accent"
-          >
-            <Search aria-hidden="true" className="size-8 text-primary" />
-            <strong className="mt-auto font-display text-base">{home('findCollector')}</strong>
-          </button>
-          <Link
-            href="/enrol"
-            className="flex min-h-36 flex-col rounded-2xl border border-border bg-card p-4 text-left active:bg-accent"
-          >
-            <UserPlus aria-hidden="true" className="size-8 text-primary" />
-            <strong className="mt-auto font-display text-base">{home('newCollector')}</strong>
-          </Link>
-          <button
-            type="button"
-            onClick={() => void syncNow()}
-            className="flex min-h-36 flex-col rounded-2xl border border-border bg-card p-4 text-left active:bg-accent"
-          >
-            <CloudUpload aria-hidden="true" className="size-8 text-primary" />
-            <strong className="mt-auto font-display text-base">{home('syncData')}</strong>
-          </button>
+          <WeighCollectorStep onResolved={selectCollector} />
         </div>
-
-        <Link
-          href="/session"
-          className="flex min-h-20 items-center gap-4 rounded-2xl bg-secondary px-4 py-3 text-foreground"
-        >
-          <Clock3 aria-hidden="true" className="size-9 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1">
-            <strong className="block font-display text-lg">
-              {home('waitingToSync', { count: pending })}
-            </strong>
-            <span className="text-sm text-muted-foreground">{home('savedOffline')}</span>
-          </span>
-          <ChevronRight aria-hidden="true" className="size-6" />
-        </Link>
-
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-start justify-between gap-3">
-            <span className="flex items-start gap-3">
-              <MapPin aria-hidden="true" className="mt-0.5 size-7 text-primary" />
-              <span>
-                <strong className="block font-display text-xl">{config.location}</strong>
-                <span className="font-mono text-xs text-muted-foreground">{config.sessionId}</span>
-              </span>
-            </span>
-            <span className="rounded-full bg-secondary px-3 py-1.5 font-display text-xs font-medium text-secondary-foreground">
-              {home('sessionActive')}
-            </span>
-          </div>
-          <div className="mt-5 border-t border-border pt-4">
-            <p className="font-display text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              {home('today')}
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-sm text-muted-foreground">{home('collected')}</span>
-                <strong className="block font-mono text-3xl text-primary">
-                  {number.format(summary?.totalKg ?? 0)} kg
-                </strong>
-              </div>
-              <div className="border-l border-border pl-4">
-                <span className="text-sm text-muted-foreground">{home('items')}</span>
-                <strong className="block font-mono text-3xl">{summary?.count ?? 0}</strong>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     );
-  }
-
-  if (step === 'collector') {
+  if (step === 'done')
     return (
-      <div className="px-5 py-5">
-        <ScreenHeader title={t('findCollectorTitle')} onBack={() => setStep('home')} />
-        <WeighCollectorStep
-          onResolved={(resolved) => {
-            setCollector(resolved);
-            setStep('material');
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (step === 'material') {
-    return (
-      <div className="flex min-h-dvh flex-col px-5 py-5">
-        <ScreenHeader title={t('materialTitle')} onBack={() => setStep('collector')} />
-        {collector ? <CollectorChip collector={collector} /> : null}
-        <div className="mt-6">
-          <h2 className="font-display text-3xl font-bold tracking-[-0.035em]">
-            {t('materialTitle')}
-          </h2>
-          <p className="mt-1 text-lg text-muted-foreground">{t('materialSubtitle')}</p>
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          {config.rates.map((item) => (
-            <MaterialTile
-              key={item.rateId}
-              rate={item}
-              selected={rate?.rateId === item.rateId}
-              onSelect={() => setRate(item)}
-            />
-          ))}
-        </div>
-        {config.rates.length === 0 ? (
-          <p className="mt-6 text-sm text-muted-foreground">{t('noRates')}</p>
-        ) : null}
-        <Button
-          type="button"
-          size="pwa"
-          className="mt-6 h-16 text-lg"
-          disabled={!rate}
-          onClick={() => setStep('weight')}
-        >
-          {t('continue')} <ArrowRight aria-hidden="true" />
+      <div className="space-y-4 px-4 py-8 text-center">
+        <CircleCheck aria-hidden="true" className="mx-auto size-12 text-primary" />
+        <h1 className="font-display text-2xl font-bold">{t('savedQueued')}</h1>
+        <p className="break-words text-sm">
+          {collector?.alias} · {rate?.material} · {number.format(weightKg)} kg
+        </p>
+        <p className="text-sm text-muted-foreground">{t('checkedLater')}</p>
+        <Button size="pwa" onClick={() => setStep('home')}>
+          {t('weighAnother')}
+        </Button>
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/session">{f('viewCollections')}</Link>
         </Button>
       </div>
     );
-  }
-
-  if (step === 'weight') {
-    return (
-      <div className="px-5 py-5">
-        <ScreenHeader title={t('weightTitle')} onBack={() => setStep('material')} />
-        <div className="mb-5 grid grid-cols-2 gap-3">
-          {collector ? <CollectorChip collector={collector} /> : null}
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-3 py-3">
-            <Recycle aria-hidden="true" className="size-9 shrink-0 text-primary" />
-            <span>
-              <strong className="block font-display">{rate?.material}</strong>
-              <span className="text-xs text-muted-foreground">{t('material')}</span>
-            </span>
-          </div>
-        </div>
-        <WeightPad
-          onSubmit={(kg) => {
-            setWeightKg(kg);
-            setStep('photo');
-          }}
-        />
+  const indicative = rate
+    ? Math.floor(
+        (rate.rateFiatMinor * (validWeight ? weightKg : 0) * 1_000_000) / config.exchangeRate,
+      )
+    : 0;
+  return (
+    <form
+      className="space-y-4 p-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void confirm();
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          aria-label={t('back')}
+          disabled={busy}
+          onClick={() => setStep('home')}
+        >
+          <ArrowLeft aria-hidden="true" />
+        </Button>
+        <h1 className="min-w-0 break-words font-display text-xl font-bold">{f('newCollection')}</h1>
       </div>
-    );
-  }
-
-  if (step === 'photo') {
-    return (
-      <div className="flex min-h-dvh flex-col px-5 py-5">
-        <ScreenHeader title={t('weightPhotoTitle')} onBack={() => setStep('weight')} />
-        <div className="rounded-2xl border border-border bg-card p-5 text-center">
-          <p className="text-left font-display text-sm font-medium text-muted-foreground">
-            {t('weightLabel')}
-          </p>
-          <p className="mt-1 font-mono text-6xl font-bold text-primary">
-            {number.format(weightKg)} <span className="text-3xl text-foreground">kg</span>
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">{t('manualSource')}</p>
-        </div>
-
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(event) => void onPhoto(event)}
-        />
-        <div className="mt-4 rounded-2xl border border-border bg-card p-3">
-          <div className="flex items-center justify-between px-1 pb-3">
-            <strong className="font-display text-lg">{t('scalePhoto')}</strong>
-            <span className="text-xs text-muted-foreground">{t('photoGuidance')}</span>
-          </div>
-          {photoPreview ? (
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-              <Image
-                src={photoPreview}
-                alt={t('photoAlt')}
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
-          ) : (
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-secondary px-3 py-2.5">
+        <span className="min-w-0">
+          <strong className="block break-words font-display text-lg">{collector?.alias}</strong>
+          <span className="font-mono text-xs text-muted-foreground">{collector?.publicCode}</span>
+        </span>
+        <Button type="button" variant="ghost" disabled={busy} onClick={() => setStep('home')}>
+          {f('change')}
+        </Button>
+      </div>
+      <fieldset className="space-y-2" disabled={busy}>
+        <legend className="mb-2 text-sm font-medium">{t('material')}</legend>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-2">
+          {config.rates.map((item) => (
             <button
               type="button"
-              onClick={() => fileInput.current?.click()}
-              className="flex aspect-[4/3] w-full flex-col items-center justify-center rounded-xl bg-muted text-muted-foreground"
+              key={item.rateId}
+              aria-pressed={rate?.rateId === item.rateId}
+              onClick={() => setRate(item)}
+              className={`flex min-h-14 min-w-0 items-center gap-2 rounded-lg border p-2.5 text-left ${rate?.rateId === item.rateId ? 'border-primary bg-secondary' : 'border-border bg-card'}`}
             >
-              <Camera aria-hidden="true" className="size-12" />
-              <span className="mt-3 font-display text-sm">{t('photoEmpty')}</span>
+              <Recycle aria-hidden="true" className="size-5 shrink-0 text-primary" />
+              <span className="min-w-0 break-words">
+                <strong className="block break-words text-sm">{item.material}</strong>
+                <span className="block text-xs text-muted-foreground">
+                  {item.fiatCurrency} {money.format(item.rateFiatMinor / 100)}/kg
+                </span>
+              </span>
             </button>
-          )}
-          <Button
-            type="button"
-            size="pwa"
-            className="mt-3 bg-fill-bitcoin text-foreground hover:bg-fill-bitcoin-pressed"
-            onClick={() => fileInput.current?.click()}
-          >
-            <Camera aria-hidden="true" />
-            {photoPreview ? t('photoRetake') : t('photoTakeScale')}
-          </Button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          {[t('guideWaste'), t('guideScale')].map((label) => (
-            <div key={label} className="flex items-center gap-2 rounded-2xl bg-secondary p-3">
-              <CircleCheck aria-hidden="true" className="size-7 shrink-0 text-primary" />
-              <span className="font-display text-sm font-medium">{label}</span>
-            </div>
           ))}
         </div>
-
-        {geo && geo.kind === 'unavailable' ? (
-          <div className="mt-4 space-y-2 rounded-2xl border border-border bg-card p-3">
-            <p className="flex items-center gap-2 text-sm">
-              <MapPinOff aria-hidden="true" className="size-4" /> {t('geoUnavailable')}
-            </p>
-            <Label htmlFor="geo-reason">{t('geoReasonLabel')}</Label>
-            <Input
-              id="geo-reason"
-              value={geoReason}
-              onChange={(event) => setGeoReason(event.target.value)}
-              placeholder={t('geoReasonPlaceholder')}
+        {config.rates.length === 0 ? <p className="text-sm">{t('noRates')}</p> : null}
+      </fieldset>
+      <div className="space-y-1.5">
+        <Label htmlFor="weight">{t('weightLabel')}</Label>
+        <div className="relative">
+          <Input
+            id="weight"
+            value={weight}
+            onChange={(event) => setWeight(event.target.value)}
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="0.00"
+            className="h-14 pr-12 font-mono text-2xl"
+            disabled={busy}
+            aria-describedby="weight-hint"
+          />
+          <span className="absolute right-4 top-4 text-muted-foreground">kg</span>
+        </div>
+        <p id="weight-hint" className="text-xs text-muted-foreground">
+          {f('weightHint')}
+        </p>
+        {weight && !validWeight ? (
+          <p role="alert" className="text-sm text-destructive">
+            {f('invalidWeight')}
+          </p>
+        ) : null}
+      </div>
+      <input
+        ref={fileInput}
+        type="file"
+        accept={ALLOWED_PHOTO_TYPES.join(',')}
+        capture="environment"
+        className="hidden"
+        disabled={busy}
+        onChange={(event) => void onPhoto(event)}
+      />
+      <div className="space-y-2">
+        <Label>{t('scalePhoto')}</Label>
+        <button
+          type="button"
+          disabled={busy || photoBusy}
+          onClick={() => fileInput.current?.click()}
+          className="flex min-h-20 w-full items-center gap-3 rounded-xl border border-dashed border-border bg-card p-3 text-left"
+        >
+          {photoPreview ? (
+            <Image
+              src={photoPreview}
+              alt={t('photoAlt')}
+              width={64}
+              height={64}
+              unoptimized
+              className="size-[64px] shrink-0 rounded-lg object-cover"
             />
-          </div>
-        ) : null}
-
-        {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
-        <Button
-          type="button"
-          size="pwa"
-          className="mt-5 h-16 text-lg"
-          disabled={!photoSha256}
-          onClick={() => setStep('review')}
-        >
-          {t('continue')} <ArrowRight aria-hidden="true" />
-        </Button>
-      </div>
-    );
-  }
-
-  if (step === 'review' && collector && rate) {
-    const rows = [
-      [t('collector'), collector.alias, collector.publicCode ?? collector.id],
-      [t('material'), rate.material, t('materialDescription')],
-      [t('weightLabel'), `${number.format(weightKg)} kg`, t('manualSource')],
-      [
-        t('unitRate'),
-        `${rate.fiatCurrency} ${money.format(rate.rateFiatMinor / 100)}/kg`,
-        t('materialDescription'),
-      ],
-      [t('value'), `${rate.fiatCurrency} ${money.format(fiatValue)}`, t('equivalent')],
-      [t('indicativePayout'), `≈ ${number.format(indicative)} sats`, t('estimated')],
-      [t('location'), config.location, config.sessionId],
-    ] as const;
-    return (
-      <div className="px-5 py-5">
-        <header className="flex items-center justify-between gap-4">
-          <Image src="/taka-sats-logo.png" alt="Taka Sats" width={166} height={50} priority />
-          <OfflineBadge />
-        </header>
-        <h1 className="mt-5 font-display text-4xl font-bold tracking-[-0.045em]">
-          {t('reviewTitle')}
-        </h1>
-        <p className="mt-1 text-lg text-muted-foreground">{t('reviewSubtitle')}</p>
-
-        <dl className="mt-5 space-y-2">
-          {rows.map(([label, value, detail]) => (
-            <div
-              key={label}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-card px-4 py-3"
-            >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">
-                <Package aria-hidden="true" className="size-5" />
-              </div>
-              <div className="min-w-0">
-                <dt className="text-sm text-muted-foreground">{label}</dt>
-                <dd className="truncate font-display text-lg font-bold">{value}</dd>
-                <span className="block truncate text-sm text-muted-foreground">{detail}</span>
-              </div>
-            </div>
-          ))}
-        </dl>
-
-        {photoPreview ? (
-          <div className="mt-2 rounded-2xl border border-border bg-card p-3">
-            <p className="mb-2 text-sm text-muted-foreground">{t('photoEvidence')}</p>
-            <div className="relative aspect-[16/6] overflow-hidden rounded-xl bg-muted">
-              <Image
-                src={photoPreview}
-                alt={t('photoAlt')}
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-secondary px-4 py-3">
-          <Clock3 aria-hidden="true" className="size-7 shrink-0 text-primary" />
+          ) : (
+            <Camera aria-hidden="true" className="size-7 shrink-0 text-primary" />
+          )}
           <span>
-            <strong className="block font-display text-sm">{t('readyOffline')}</strong>
-            <span className="text-sm text-muted-foreground">{t('uploadsAutomatically')}</span>
+            <strong className="block text-sm">
+              {photoBusy
+                ? f('preparingPhoto')
+                : photoPreview
+                  ? t('photoRetake')
+                  : t('photoTakeScale')}
+            </strong>
+            <span className="text-xs text-muted-foreground">{f('photoHint')}</span>
           </span>
-        </div>
-
-        {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
-        <Button
-          type="button"
-          size="pwa"
-          className="mt-4 h-16 text-lg"
-          disabled={busy}
-          onClick={() => void confirm()}
-        >
-          <Check aria-hidden="true" /> {busy ? t('saving') : t('confirmCollection')}
-        </Button>
-        <Button
-          type="button"
-          size="pwa"
-          variant="outline"
-          className="mt-2"
-          onClick={() => setStep('photo')}
-        >
-          <Pencil aria-hidden="true" /> {t('editDetails')}
-        </Button>
+        </button>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-      <CircleCheck aria-hidden="true" className="size-20 text-primary" />
-      <h1 className="mt-5 font-display text-3xl font-bold">{t('savedQueued')}</h1>
-      <p className="mt-2 text-muted-foreground">{t('savedDescription')}</p>
-      <p className="mt-2 max-w-xs text-sm text-muted-foreground">{t('checkedLater')}</p>
-      <Button type="button" size="pwa" className="mt-8" onClick={resetForNext}>
-        {t('weighAnother')}
+      {!geo ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          {f('findingLocation')}
+        </p>
+      ) : geo.kind === 'unavailable' ? (
+        <div className="space-y-2">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <MapPinOff aria-hidden="true" className="size-4" />
+            {t('geoUnavailable')}
+          </p>
+          <Label htmlFor="geo-reason">{t('geoReasonLabel')}</Label>
+          <Input
+            id="geo-reason"
+            value={geoReason}
+            onChange={(event) => setGeoReason(event.target.value)}
+            placeholder={t('geoReasonPlaceholder')}
+            disabled={busy}
+          />
+        </div>
+      ) : (
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <MapPin aria-hidden="true" className="size-4" />
+          {f('locationAttached')}
+        </p>
+      )}
+      {rate && validWeight ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-secondary px-3 py-2 text-sm">
+          <strong>
+            {rate.fiatCurrency} {money.format((rate.rateFiatMinor * weightKg) / 100)}
+          </strong>
+          <span className="font-mono">≈ {number.format(indicative)} sats</span>
+        </div>
+      ) : null}
+      <p className="text-xs text-muted-foreground">{f('saveHint')}</p>
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+      <Button
+        type="submit"
+        size="pwa"
+        disabled={
+          busy ||
+          photoBusy ||
+          !rate ||
+          !validWeight ||
+          !photoSha256 ||
+          !geo ||
+          (geo.kind === 'unavailable' && !geoReason.trim())
+        }
+      >
+        <Check aria-hidden="true" />
+        {busy ? t('saving') : t('confirmCollection')}
       </Button>
-      <Button type="button" variant="ghost" className="mt-2" onClick={() => setStep('home')}>
-        {t('backHome')}
-      </Button>
-    </div>
+    </form>
   );
 }

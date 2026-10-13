@@ -16,7 +16,6 @@ test('a 401 on sync keeps the queue; signing in again drains it', async ({ page,
   test.setTimeout(150_000);
   await login(page, FIELD_SUPERVISOR, '/enrol');
   await page.goto('/weigh');
-  await page.getByRole('button', { name: /Record a collection/ }).click();
   await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
 
   await context.setOffline(true);

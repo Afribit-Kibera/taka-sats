@@ -496,3 +496,15 @@ each preserves or alters (Code Style Guide §12). Newest first.
 - 2026-09-04 - `lib/money.ts` introduced. `Sats` is a branded integer built only via
   `sats()`; `computePayout` is the sole payout-arithmetic entry point and currently throws
   `NotYetImplemented`. No destination parameter exists on its signature.
+
+- 2026-10-08 - Compact supervisor UI preserves collector authorization, bootstrap/passkey gates,
+  server-side Receive-wallet validation, worker-only payout execution and IndexedDB-before-success.
+  Camera/location startup probes retain no media/coordinates and stop all acquired camera tracks.
+  NFC is optional and gesture-only; scans abort on unmount. QR identity matching must be exact.
+  Signed registration provenance records actual NFC selection, not mere ownership of a card.
+
+- 2026-10-13 - Global Record uses manual identity selection; NFC only starts from explicit icon actions.
+  Cancellation suppresses queued NFC readings and aborts card operations. Collector authorization,
+  Receive-wallet ownership/verification and worker-only payout execution remain unchanged. Complete
+  local capture commits atomically across event/photo/outbox stores; quota failures roll back all facts.
+  Photo/event checksum mismatches and unsupported/oversized files are refused before queueing.

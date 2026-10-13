@@ -944,6 +944,30 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 
 ## 8. Changelog for the frontend
 
+### 2026-10-13 - NFC opt-in and complete offline capture
+
+- The shared **Record** action opens manual collector selection from every field screen; no NFC reader
+  starts on load, installation, registration or this action. Only explicit NFC-icon actions scan/write.
+  Returning to manual selection aborts a pending NFC scan; late readings are ignored.
+- Cardless registration, Receive-wallet verification, offline collection, sync, operator review and
+  worker payment require no tag. Collector authorization and all payout safeguards remain unchanged.
+- Local event, photo and both outbox entries now commit in one IndexedDB transaction. Failure rolls
+  everything back; a mismatched photo/event checksum is rejected locally. Signed payloads are unchanged.
+- Capture and upload share the existing raster allowlist (JPEG/PNG/WebP/HEIC/HEIF) and 8 MiB limit.
+  Unsupported, empty or oversized files are rejected before queueing; HTTP upload policy is unchanged.
+
+### 2026-10-08 - Compact mobile field flow
+
+- `/weigh` is the Collections entry point; `/lookup` redirects there. Enrollment takes name and
+  optional Receive wallet together, using existing create/destination endpoints. Partial wallet failures
+  keep the same collector UUID; pending registrations have wallet/card shortcuts. Authorization is unchanged.
+- Material, kg, mandatory scale photo, GPS (or explicit reason), estimated value and confirm share one form.
+  Signed payload shape is unchanged. `registrationType: tap` now means an actual NFC lookup; manual/QR
+  selection is `walk_in`, even if that collector has a card. NFC mapping remains optional identity only.
+- First signed-in field load requests camera/location without storing media/coordinates; NFC remains
+  gesture-only. Session cache primes automatically. Passkey enrollment returns to Collections; permissions
+  and install/recovery settings stay available without a setup checklist blocking field work.
+
 - 2026-10-08: `/api/auth/passkeys`, passkey Auth.js provider, session authentication metadata,
   enrollment-only bootstrap sessions, canonical-origin PIN/biometric sign-in and operator recovery.
 

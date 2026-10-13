@@ -14,15 +14,24 @@ import { getSettings } from '@/lib/config';
  * Wrapped in `<SessionGate>` (M2-7): a plain `supervisor` can only enrol
  * inside an active assigned session — the API enforces the same rule.
  */
-export default async function EnrolPage() {
+export default async function EnrolPage({
+  searchParams,
+}: {
+  readonly searchParams: Promise<{ collector?: string }>;
+}) {
   const t = await getTranslations('Enrol');
   const { provisioning_enabled: provisioningEnabled } = getSettings().custody;
+  const { collector } = await searchParams;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 p-4">
       <h1 className="font-display text-xl font-bold tracking-[-0.02em]">{t('title')}</h1>
       <SessionGate>
-        <EnrolFlow provisioningEnabled={provisioningEnabled} />
+        <EnrolFlow
+          key={collector ?? 'new'}
+          provisioningEnabled={provisioningEnabled}
+          initialCollectorId={collector}
+        />
       </SessionGate>
       <MyRegistrations />
     </div>

@@ -13,7 +13,7 @@ export async function login(page: Page, account: Account, landing: string): Prom
   await page.fill('#identifier', account.phone);
   await page.fill('#password', account.password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.waitForURL(/\/(admin|setup)$/);
+  await page.waitForURL(/\/(admin|weigh)$/);
   if (!page.url().endsWith(landing)) await page.goto(landing);
 }
 
@@ -43,16 +43,10 @@ export async function expectNoErrorNotice(page: Page): Promise<void> {
 export async function recordCollection(page: Page, search: string, alias: RegExp): Promise<void> {
   await page.getByRole('textbox', { name: 'Name, group or public code' }).fill(search);
   await page.getByRole('button', { name: alias }).click();
-  await page.getByRole('button', { name: 'Use selected collector' }).click();
   await page.getByRole('button', { name: /PET/ }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  for (const key of ['2', '.', '5']) {
-    await page.getByRole('button', { name: key, exact: true }).click();
-  }
-  await page.getByRole('button', { name: 'Next' }).click();
+  await page.locator('#weight').fill('2.5');
   await page.setInputFiles('input[type="file"]', SHOT);
   await page.locator('#geo-reason').fill('e2e: headless, no GPS');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'Confirm collection' }).click();
   await expect(page.getByText('Saved and queued')).toBeVisible();
 }

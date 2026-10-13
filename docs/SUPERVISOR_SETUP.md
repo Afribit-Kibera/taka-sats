@@ -1,9 +1,10 @@
 # Install and run the supervisor app
 
-Open **https://taka.afribit.africa/install** in Chrome on an NFC-capable Android phone. Avoid in-app
+Open **https://taka.afribit.africa/install** in Chrome on an Android phone. NFC is optional. Avoid in-app
 browsers. Tap **Install app** if offered, or Chrome's menu → **Install app / Add to Home screen**.
 Open the home-screen icon and sign in once with your private staff code/setup phrase. The installed app starts
-at `/setup`. Installation acceptance and actually running the installed app are separate statuses.
+at `/weigh` (Collections). Required phone enrollment appears automatically. Installation acceptance
+and actually running the installed app are separate statuses.
 
 Enable an Android screen lock (PIN, fingerprint or face unlock), then tap **Set up phone security** and
 approve Chrome's native passkey prompt. Operator-issued setup phrases expire after seven days and grant
@@ -15,21 +16,25 @@ The app never receives your phone PIN or biometrics. An existing session remains
 For a lost phone or unavailable passkey, the administrator revokes its access and issues a new phrase
 using the operator-only procedure in [phone access](PHONE_ACCESS.md). Reconnect before signing in.
 
-Tap **Allow Camera**, **Allow Location** and **Allow NFC**. Enable Android Location/NFC too. Camera is
-used for QR scans and evidence; location is recorded with collections; NFC reads/writes identities.
-The permission checks save no evidence. No microphone, notification or Bluetooth permission is required.
+Camera and location request native permission on the first signed-in field load. Allow the prompts;
+enable Android Location too. These checks save no evidence and close the camera immediately. They never
+block the collection list. Use the settings icon to retry. NFC asks only when you tap its action.
+No microphone, notification or Bluetooth permission is required.
 If denied, allow access in Android's Chrome app permissions and Chrome's site settings, then retry.
-Without NFC use printed QR/code lookup. The hardware must still be checked with one real blank card.
+Without NFC, choose the collector by name, group or public code. Printed QR lookup is another option.
+If you plan to use cards, check the phone and one real blank card before distributing them.
 
-Tap **Check session and download field data**, then **Open field work** while online. A supervisor needs
+Open **Collections** online; session, rates and approved collectors download automatically. A supervisor needs
 an active assigned session and published material rates. Downloaded data supports offline weighing;
 registration, wallet verification and card linking require internet. Keep the app open when reconnecting
 to upload photos and sync events. Do not clear browser data with queued work. Private API responses are
 never an offline cache; pending evidence lives in IndexedDB.
 
-1. Register the person or collective in **Enrol**. Scan their wallet's **Receive** QR; a Pay/spending QR
-   is rejected. Keep their public code. Collectors do not need a login.
-2. Choose **Write or print a card**. The registered collector is already selected. Tap **Write card**,
+1. Tap **Add collector**, enter their name and Lightning address (or tap the QR icon to scan their
+   **Receive** QR), then **Save collector**. Group options are below the wallet. To add a wallet later,
+   tap the wallet icon in the waiting list. Pay/spending codes are rejected. Collectors need no login.
+2. Optionally tap the **NFC icon** beside a collector or **Write or print a card** after registration.
+   The collector is already selected. Tap **Write card**,
    hold a blank NTAG213/216 steady, then present that same card for read-back. Existing cards are not
    overwritten. The chip contains public identity references only.
 3. Tap **Check a card** and confirm the linked recipient. If the write succeeded but linking failed,
@@ -38,8 +43,12 @@ never an offline cache; pending evidence lives in IndexedDB.
 4. A supervisor's new collector remains **pending**. An admin/hub lead authorizes them and checks their
    receive-only wallet before weighing. Operators can use their own API dashboard or the optional
    `/collectors` reference console. Card issuance never authorizes payment.
-5. Identify the active recipient, select material, enter physical kg, photograph the scale/display/load,
-   review, and confirm. Offline shows **Saved and queued**. Reconnect and inspect `/session` for results.
+5. Tap a collector in **Collections**. Material, weight, scale photo, location and estimated payment are
+   on one form. Check the details and **Confirm collection**. NFC is unnecessary. Offline shows **Saved
+   and queued**. Reconnect and inspect **Activity** (`/session`) for results.
+   The green **Record** action at the bottom opens manual selection from any field screen. NFC starts
+   only when an NFC icon is pressed; pressing **Record** cancels scanning. Cardless work can complete
+   through the same checks and payment worker. Unsupported/oversized photos are refused before saving.
 6. The worker checks evidence, recipient, wallet, rate, session and anomalies. Eligible work may pay real
    sats automatically. Exceptions wait for a different reviewer in `/review`; uncertain sends must be
    checked before any retry. The hot wallet is funded externally.

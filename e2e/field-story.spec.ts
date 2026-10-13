@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { eq } from 'drizzle-orm';
 import { closeDb, getDb } from '@/lib/db/client';
-import { collectors, payouts } from '@/lib/db/schema';
+import { collectionEvents, collectors, payouts } from '@/lib/db/schema';
 import { processPayoutJob } from '@/lib/jobs';
 import { FakeLightningProvider } from '@/lib/lightning/FakeLightningProvider';
 import { ADMINS, HUB_LEAD, STORY_SUPERVISOR } from './fixtures/accounts';
@@ -52,6 +52,16 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
   const hub = await personContext(browser, HUB_LEAD, '/admin');
   const second = await personContext(browser, ADMINS[1], '/admin');
   const sup = await personContext(browser, STORY_SUPERVISOR, '/enrol');
+  const serverFailures: string[] = [];
+  for (const person of [admin, hub, second, sup])
+    person.page.on('response', (response) => {
+      if (response.status() >= 500)
+        serverFailures.push(`${response.status()} ${new URL(response.url()).pathname}`);
+    });
+  // This whole workflow runs on a device without Web NFC and without issuing a collector card.
+  await sup.context.addInitScript(() => {
+    Object.defineProperty(globalThis, 'NDEFReader', { value: undefined, configurable: true });
+  });
 
   // 1. Admin: create a session, assign the supervisor, start it.
   {
@@ -73,11 +83,9 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
     const page = sup.page;
     await page.goto('/enrol');
     await page.fill('#alias', ALIAS);
-    await page.getByRole('button', { name: 'Scan their wallet QR' }).click();
     await expect(page.locator('#manualCode')).toBeVisible({ timeout: 30_000 });
     await page.fill('#manualCode', WALLET);
-    await page.getByRole('button', { name: 'Use this code' }).click();
-    await page.getByTestId('finish-pending').click();
+    await page.getByRole('button', { name: 'Save collector', exact: true }).click();
     await expect(page.getByTestId('public-code')).toHaveText(/^TS-/);
     await expect(page.getByTestId('pending-note')).toBeVisible();
     // The supervisor can see the registration is waiting.
@@ -101,22 +109,16 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
   {
     const page = sup.page;
     await page.goto('/weigh');
-    await page.getByRole('button', { name: /Record a collection/ }).click();
+    await page.getByRole('link', { name: 'Record collection', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
     await sup.context.setOffline(true);
 
     await page.getByRole('textbox', { name: 'Name, group or public code' }).fill('Story');
     await page.getByRole('button', { name: new RegExp(ALIAS) }).click();
-    await page.getByRole('button', { name: 'Use selected collector' }).click();
     await page.getByRole('button', { name: /PET/ }).click();
-    await page.getByRole('button', { name: 'Continue' }).click();
-    for (const key of ['2', '.', '5']) {
-      await page.getByRole('button', { name: key, exact: true }).click();
-    }
-    await page.getByRole('button', { name: 'Next' }).click();
+    await page.locator('#weight').fill('2.5');
     await page.setInputFiles('input[type="file"]', SHOT);
     await page.locator('#geo-reason').fill('e2e: headless, no GPS');
-    await page.getByRole('button', { name: 'Continue' }).click();
     // A double tap on Save must record exactly one collection.
     await page.getByRole('button', { name: 'Confirm collection' }).dblclick();
     await expect(page.getByText('Saved and queued')).toBeVisible();
@@ -165,6 +167,14 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
   // 7. The worker pays (see the note above: the handler is called from here).
   try {
     expect(await runWorker(ALIAS)).toBe('paid');
+    const db = getDb();
+    const [recipient] = await db.select().from(collectors).where(eq(collectors.alias, ALIAS));
+    const [event] = await db
+      .select()
+      .from(collectionEvents)
+      .where(eq(collectionEvents.collectorId, recipient!.id));
+    expect(recipient!.nfcTagId).toBeNull();
+    expect(event!.registrationType).toBe('walk_in');
   } finally {
     await closeDb();
   }
@@ -216,4 +226,5 @@ test('the full story: session, enrolment, authorization, offline weigh, sync, ap
   for (const person of [admin, hub, second, sup]) {
     await person.context.close();
   }
+  expect(serverFailures).toEqual([]);
 });

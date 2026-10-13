@@ -44,13 +44,16 @@ export async function startTagScan(
   onSerial: (serial: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
+  if (signal.aborted) throw new DOMException('Card scan cancelled', 'AbortError');
   const Reader = getNdefReader();
   if (!Reader) {
     throw new Error('Web NFC is not available on this device');
   }
 
   const reader = new Reader();
-  reader.addEventListener('reading', (event) => onSerial(event.serialNumber));
+  reader.addEventListener('reading', (event) => {
+    if (!signal.aborted) onSerial(event.serialNumber);
+  });
   await reader.scan({ signal });
 }
 

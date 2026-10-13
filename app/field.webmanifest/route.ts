@@ -8,7 +8,7 @@ export function GET() {
       short_name: 'Taka Sats',
       description: 'Verified recycling work with transparent Bitcoin payouts.',
       id: '/',
-      start_url: '/setup',
+      start_url: '/weigh',
       scope: '/',
       display: 'standalone',
       orientation: 'portrait',
