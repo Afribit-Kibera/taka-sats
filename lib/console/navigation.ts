@@ -19,6 +19,12 @@ const ITEMS: readonly NavItem[] = [
   { key: 'review', href: '/review', scope: 'payout:approve', group: 'groupReview' },
   { key: 'payouts', href: '/payouts', scope: 'payout:read', group: 'groupReview' },
   { key: 'hotWallet', href: '/hot-wallet', scope: 'treasury:read', group: 'groupReview' },
+  {
+    key: 'communitySetup',
+    href: '/community-setup',
+    scope: 'treasury:read',
+    group: 'groupProgramme',
+  },
   { key: 'anomalies', href: '/anomalies', scope: 'anomaly:review', group: 'groupReview' },
   {
     key: 'reconciliation',

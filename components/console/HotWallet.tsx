@@ -7,6 +7,7 @@ import { useApi, useAutoRefresh } from '@/components/console/hooks';
 import { DataState, KeyValue, PageHeader, Panel } from '@/components/console/kit';
 import { Button } from '@/components/ui/button';
 import { formatSats } from '@/lib/console/format';
+import Link from 'next/link';
 
 export type HotWalletSummary = {
   hotWallet: {
@@ -99,6 +100,9 @@ export function HotWallet() {
           <Wallet aria-hidden="true" className="size-6 shrink-0 text-primary" />
           <p className="text-sm text-muted-foreground">{t('externalBody')}</p>
         </div>
+        <Button asChild variant="outline" className="mt-4">
+          <Link href="/community-setup">{t('setupLink')}</Link>
+        </Button>
       </Panel>
     </div>
   );

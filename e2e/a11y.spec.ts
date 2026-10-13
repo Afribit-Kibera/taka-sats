@@ -5,7 +5,7 @@ import { ADMINS, FIELD_SUPERVISOR } from './fixtures/accounts';
 import { audit, login } from './helpers';
 
 test.describe('public pages', () => {
-  for (const route of ['/', '/about', '/install', '/login', '/c/TS-KBR-0042']) {
+  for (const route of ['/', '/about', '/start-community', '/install', '/login', '/c/TS-KBR-0042']) {
     test(`axe: ${route}`, async ({ page }) => {
       await audit(page, route);
     });
@@ -19,6 +19,7 @@ test.describe('operator console', () => {
     '/payouts',
     '/events',
     '/hot-wallet',
+    '/community-setup',
     '/review',
     '/anomalies',
     '/reconciliation',

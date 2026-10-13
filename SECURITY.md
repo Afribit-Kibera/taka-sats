@@ -508,3 +508,10 @@ each preserves or alters (Code Style Guide §12). Newest first.
   Receive-wallet ownership/verification and worker-only payout execution remain unchanged. Complete
   local capture commits atomically across event/photo/outbox stores; quota failures roll back all facts.
   Photo/event checksum mismatches and unsupported/oversized files are refused before queueing.
+
+- 2026-10-13 - Managed-community setup adds an authenticated treasury:read, no-store readiness
+  snapshot with aggregate staff/session/rate data and current operating float. No credentials,
+  wallet IDs, staff identifiers, reserve keys/descriptors or signing material are returned.
+  External multisig/field flags are explicit operator attestations, default false; invalid policies
+  fail boot. Checklist status never changes payment authority, identity gates or worker checks.
+  The app initiates no external transfer or wallet creation. Existing Blink secrets are preserved.

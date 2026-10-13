@@ -3,6 +3,11 @@
 Taka Sats pays registered recycling recipients from a small operating Lightning wallet.
 Treasury governance, reserve keys and funding happen outside this app.
 
+Kibera currently uses Blink. Members set up their multisig externally and fund the Blink BTC wallet
+before collection work. Each new community needs separate hosting and credentials. The
+[community setup guide](COMMUNITY_SETUP.md) covers the BTC destination, confirmed available balance
+and launch checks. `/community-setup` neither creates wallets nor signs transfers.
+
 ```text
 External programme treasury -> operating Lightning wallet -> registered recipient wallet
        external funding           worker-only payment          individual or collective

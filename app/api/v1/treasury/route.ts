@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- * `GET /api/v1/treasury`: one payload for the treasury panel (FR-7.5): the hot-wallet float, the
- * cap and the room under it, the proposals still in flight, the payouts waiting for funds, and
- * the pool (a read-only balance is not configured, and the field says so). Scope `treasury:read`
- * (admin). A hot wallet that cannot be read does not fail the call: `hotWallet.error` says so.
+ * `GET /api/v1/treasury` (also /hot-wallet): read-only operating balance and priced queue liability.
+ * Funding and reserve governance remain external. Scope treasury:read (admin/hub lead).
+ * Unknown balance stays null and carries hotWallet.error, never a fabricated zero.
  */
 
 import { NextResponse } from 'next/server';

@@ -30,6 +30,15 @@ self-approval bypass is introduced.
 
 ### Current implementation override (2026-10-06, D-29)
 
+Managed community launch clarification (2026-10-13): Afribit Africa operates Kibera with its current
+Blink BTC wallet. Members establish a multisig with at least two required signatures externally;
+external funding of Blink is a prerequisite for another community. Each community uses separate
+hosting/data/storage/staff/Blink credentials; no tenant isolation is claimed inside one deployment.
+`/start-community`, `/community-setup` and read-only authenticated `GET /api/v1/community/readiness`
+show setup and unresolved checks. `[community]`/`[community.reserve]` hold names, code prefix and
+explicit external/field attestations only. No reserve key/transfer authority/new custody mode is added;
+payment checks continue independently. See [community setup](COMMUNITY_SETUP.md).
+
 Supervisor launch clarification (2026-10-13): public `/install` detects the available browser install
 prompt and provides manual Chrome instructions; installed launch is `/weigh`. Required phone enrollment
 appears before field access. Camera/location ask on first field load; NFC only starts from its icon.

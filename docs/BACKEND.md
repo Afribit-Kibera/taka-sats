@@ -944,6 +944,25 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 
 ## 8. Changelog for the frontend
 
+### 2026-10-13 - Managed-community launch
+
+`GET /api/v1/community/readiness` requires `treasury:read` (admin/hub lead), including normal
+account/API-key checks. Response is `no-store`: `checkedAt` (ISO), `community` `{name,operator}`,
+`reserve` `{walletLabel:null|string,requiredSignatures,totalSigners,operatorConfirmed}`,
+`paymentProvider`, `checks` (`reserve/blink/funding/session/rates/staff/field`, each
+`ready|needs_setup|unknown`), `checklistComplete`, `field` aggregates and `wallet` (the existing
+operating-wallet payload). Field includes `activeSessions`, `publishedRates`, `freshExchangeRate`,
+`productionStaff`, `enrolledStaff`, `enrolledOperators`, `legacyStaff`, `nextSessionEnd:null|ISO`.
+No staff codes, wallet IDs or secrets. Config lives in `[community]`/`[community.reserve]`;
+see CONFIGURATION and COMMUNITY_SETUP. Public community names are not reserve custody evidence.
+
+Unknown balance stays null/unknown; fake/unconfigured Blink cannot pass live funding. Funding covers
+the priced queue only, needs a positive balance plus surplus and is unknown for unpriced work.
+Session needs active assigned staff in its real window; rates need a fresh non-future BTC snapshot.
+Staff needs ≥2 enrolled production-prefix accounts, an administrator and zero active accounts outside
+that prefix. External reserve/physical confirmations default false. This snapshot grants no setup,
+funding or payment mutation and is not a security certification. Existing payment/session rules stay.
+
 ### 2026-10-13 - NFC opt-in and complete offline capture
 
 - The shared **Record** action opens manual collector selection from every field screen; no NFC reader

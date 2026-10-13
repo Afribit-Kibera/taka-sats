@@ -41,6 +41,8 @@ Every key there carries a comment. Summary of the sections:
 | Section | Purpose |
 |---|---|
 | `[programme]` | Name, timezone, fiat currency (ISO 4217), UI locales, default locale, `public_base_url` (where this deployment is served - builds credential URLs) |
+| `[community]` | Community `name`/`operator` (1–100 chars), uppercase `production_staff_prefix` (1–12 chars), `field_checks_confirmed` (false until the owner checks an actual phone/scale sample). One community per deployment. |
+| `[community.reserve]` | External metadata only: `wallet_label` (0–100 chars), `required_signatures`/`total_signers` (0–15; 0/0 unconfigured), `setup_confirmed` (false). Configured policy requires M ≥ 2 and N ≥ M; confirmation also requires a label. No keys/addresses/descriptors/transfers. |
 | `[custody]` | `byo` vs `provisioned` address source; the provisioning enable flag + G1 acknowledgement |
 | `[collectors]` | The authorization gate (`authorization_required`), and the `public_code` format (`code_prefix`, `default_site_code`) - ADR-0017 |
 | `[auth]` | `login_max_failures` / `login_window_minutes` (failed sign-ins per identifier before a lockout of one window; 0 disables), supervisor session lifetime (JWT-based, survives offline) |
@@ -57,6 +59,9 @@ Every key there carries a comment. Summary of the sections:
 | `[ledger]` | Checkpoint job on/off, its cron, the minimum new entries per checkpoint, OpenTimestamps toggle |
 
 ### Cross-field rules enforced at boot
+
+- A configured external reserve needs M ≥ 2 and N ≥ M. Confirmation also requires a wallet label.
+  This is an operator attestation, not verified custody. See [community setup](COMMUNITY_SETUP.md).
 
 - `programme.default_locale` must be one of `programme.locales`.
 - `custody.provisioning_enabled = true` requires `custody.provisioning_ack` to equal the

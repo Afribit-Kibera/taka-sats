@@ -21,6 +21,34 @@ export const PROVISIONING_ACKNOWLEDGEMENT =
 
 const nonEmpty = z.string().trim().min(1);
 
+const communitySchema = z.object({
+  name: nonEmpty.max(100),
+  operator: nonEmpty.max(100),
+  production_staff_prefix: z.string().regex(/^[A-Z][A-Z0-9]{0,11}$/),
+  field_checks_confirmed: z.boolean(),
+  reserve: z
+    .object({
+      wallet_label: z.string().trim().max(100),
+      required_signatures: z.int().min(0).max(15),
+      total_signers: z.int().min(0).max(15),
+      setup_confirmed: z.boolean(),
+    })
+    .superRefine((value, ctx) => {
+      const configured = value.required_signatures !== 0 || value.total_signers !== 0;
+      if (
+        (configured &&
+          (value.required_signatures < 2 || value.total_signers < value.required_signatures)) ||
+        (value.setup_confirmed && (!value.wallet_label || !configured))
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'External reserve needs a wallet label and a valid M-of-N policy with at least two required signatures before confirmation.',
+        });
+      }
+    }),
+});
+
 const programmeSchema = z.object({
   name: nonEmpty,
   timezone: nonEmpty,
@@ -205,6 +233,7 @@ const ledgerSchema = z.object({
 export const settingsSchema = z
   .object({
     programme: programmeSchema,
+    community: communitySchema,
     custody: custodySchema,
     collectors: collectorsSchema,
     auth: authSchema,

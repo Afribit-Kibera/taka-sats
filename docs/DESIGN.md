@@ -13,6 +13,12 @@
 
 ## 0. How to use this document
 
+Managed launch (2026-10-13): public content identifies Kibera and its managed Blink operating model.
+CommunityFunding composes existing tokens/Lucide icons into three funding stages; `/start-community`
+is a responsive five-step guide. `/community-setup` uses console Panel/DataState/Button/KeyValue and
+explicit checked/needs-setup/unknown text, without wallets, seed-entry fields or payment controls.
+The field header and install handoff identify the deployment community. No new UI library or palette.
+
 1. **Do not hand-roll a component that §6 maps to a library.** Pull it from the named source, re-theme it with the tokens in §4, and move on.
 2. **The Brand Guidelines win every tie.** This document operationalises them; it never overrides them. If something here contradicts `Taka_Sats_Brand_Guidelines.md`, the Brand Guidelines are right - fix this document.
 3. **Three surfaces, three budgets (§3).** A component that is fine in the Admin dashboard may be banned in the Supervisor PWA. Check the surface column before you adopt.

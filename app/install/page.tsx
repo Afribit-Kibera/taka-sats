@@ -2,12 +2,19 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { InstallCard } from '@/components/supervisor/InstallCard';
+import { getSettings } from '@/lib/config';
 
 export default async function InstallPage() {
   const t = await getTranslations('FieldSetup');
   return (
     <main className="mx-auto min-h-dvh max-w-lg space-y-4 p-4 pt-8">
       <h1 className="font-display text-2xl font-bold">{t('handoffTitle')}</h1>
+      <p className="text-sm font-medium">
+        {t('managedCommunity', {
+          name: getSettings().community.name,
+          operator: getSettings().community.operator,
+        })}
+      </p>
       <p className="text-sm text-muted-foreground">{t('supportedPhone')}</p>
       <InstallCard />
       <ol className="list-decimal space-y-3 pl-5 text-sm">

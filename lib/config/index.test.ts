@@ -24,6 +24,24 @@ describe('loadSettings()', () => {
     expect(Object.isFrozen(settings.payouts)).toBe(true);
   });
 
+  it.each([
+    { required: '1', total: '3', confirmed: 'false', label: 'Test reserve' },
+    { required: '3', total: '2', confirmed: 'false', label: 'Test reserve' },
+    { required: '0', total: '0', confirmed: 'true', label: 'Test reserve' },
+    { required: '2', total: '3', confirmed: 'true', label: '' },
+  ])('rejects invalid or incomplete external reserve confirmation: %j', (policy) => {
+    expect(() =>
+      loadSettings({
+        env: {
+          TAKASATS__COMMUNITY__RESERVE__REQUIRED_SIGNATURES: policy.required,
+          TAKASATS__COMMUNITY__RESERVE__TOTAL_SIGNERS: policy.total,
+          TAKASATS__COMMUNITY__RESERVE__SETUP_CONFIRMED: policy.confirmed,
+          TAKASATS__COMMUNITY__RESERVE__WALLET_LABEL: policy.label,
+        },
+      }),
+    ).toThrow(/External reserve/);
+  });
+
   it('applies a valid environment override', () => {
     const settings = loadSettings({
       env: { TAKASATS__PAYOUTS__SECOND_SIGNOFF_THRESHOLD_SATS: '75000' },

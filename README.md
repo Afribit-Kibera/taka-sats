@@ -7,10 +7,10 @@ and pay them over Bitcoin Lightning. Every collection and every payment goes int
 anyone can verify.
 
 [![Licence: AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-blue.svg)](LICENSE)
-[![Status: field pilot](https://img.shields.io/badge/status-field%20pilot-green.svg)](#status)
+[![Status: managed Kibera](https://img.shields.io/badge/status-managed%20Kibera-green.svg)](#status)
 
 [About](https://taka.afribit.africa/about) ·
-[Run it for your community](docs/GETTING_STARTED.md) ·
+[Run it for your community](docs/COMMUNITY_SETUP.md) ·
 [How it stays honest](docs/VERIFICATION.md) ·
 [Source](https://github.com/novyrix/taka-sats)
 
@@ -20,10 +20,15 @@ Taka Sats (Swahili for "waste sats") is the software behind a waste to Bitcoin p
 built for [Afribit Africa](https://afribit.africa) and is designed so that any recycling or
 circular economy programme can run its own copy.
 
+Afribit Africa manages the current Kibera deployment using Blink BTC payouts. Members establish
+their multisig externally and fund a separate operating wallet. Each new community needs its own
+deployment, data, staff access and funded Blink wallet; the app holds no reserve keys or signatures.
+Use the [launch guide](docs/COMMUNITY_SETUP.md) and authenticated `/community-setup` checklist.
+
 A supervisor identifies a collector, weighs the material and takes a photo of the scale, all on a
 phone that works without internet. When the phone reconnects, the record is checked and sealed.
 Eligible work pays through the worker; exceptions need another staff member's review. The collector
-receives sats in a wallet they control. NFC cards are optional.
+receives sats in their chosen Receive wallet. NFC cards are optional.
 
 ## The problem
 

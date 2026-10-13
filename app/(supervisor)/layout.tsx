@@ -12,6 +12,7 @@ import { FieldPermissions } from '@/components/supervisor/FieldPermissions';
 import { isRole, roleHasScope } from '@/lib/auth/permissions';
 import { DeviceSetup } from '@/components/supervisor/DeviceSetup';
 import { getTranslations } from 'next-intl/server';
+import { getSettings } from '@/lib/config';
 
 /**
  * Supervisor PWA shell (DESIGN §5.1 — thumb-first single column). Every route
@@ -30,7 +31,7 @@ export default async function SupervisorLayout({ children }: { readonly children
     <FieldPermissions enabled={!needsSecurity} staffId={session!.user.id}>
       <div className="mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-background shadow-[0_0_50px_rgb(20_20_20/0.08)]">
         <ModeBanner />
-        <FieldHeader />
+        <FieldHeader communityName={getSettings().community.name} />
         {!needsSecurity ? <SyncManager /> : null}
         <FieldContent>
           {needsSecurity ? (

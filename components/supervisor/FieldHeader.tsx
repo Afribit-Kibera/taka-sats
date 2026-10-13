@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { OfflineBadge } from './OfflineBadge';
 
-export function FieldHeader() {
+export function FieldHeader({ communityName }: { readonly communityName: string }) {
   const t = useTranslations('FieldSetup');
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border bg-background px-4 py-2">
@@ -19,7 +19,10 @@ export function FieldHeader() {
           className="size-[32px] shrink-0"
           priority
         />
-        <span className="min-w-0 break-words font-display text-base font-bold">Taka Sats</span>
+        <span className="min-w-0 break-words font-display">
+          <strong className="block text-base">Taka Sats</strong>
+          <span className="block text-xs text-muted-foreground">{communityName}</span>
+        </span>
       </Link>
       <div className="ml-auto flex max-w-full min-w-0 items-center gap-1">
         <OfflineBadge className="min-w-0 px-2 text-xs" />

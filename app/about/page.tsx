@@ -6,9 +6,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { SOURCE_CODE_URL, VERIFICATION_PROTOCOL_URL } from '@/lib/site';
+import { getSettings } from '@/lib/config';
+import { CommunityFunding } from '@/components/public/CommunityFunding';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('About');
+
   return {
     title: t('metaTitle'),
     description: t('metaDescription'),
@@ -21,6 +24,7 @@ const focusRing =
 
 export default async function AboutPage() {
   const t = await getTranslations('About');
+  const community = getSettings().community;
 
   const steps = [
     { title: t('step1Title'), body: t('step1Body') },
@@ -75,7 +79,7 @@ export default async function AboutPage() {
           {t('title')}
         </h1>
         <p className="mt-7 text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9">
-          {t('lead')}
+          {t('lead', { name: community.name, operator: community.operator })}
         </p>
 
         <section className="mt-16" aria-labelledby="problem">
@@ -144,6 +148,10 @@ export default async function AboutPage() {
           </a>
         </section>
 
+        <div className="mt-16">
+          <CommunityFunding />
+        </div>
+
         <section className="mt-16" aria-labelledby="status">
           <h2 id="status" className="font-display text-2xl font-bold tracking-[-0.02em]">
             {t('statusTitle')}
@@ -173,7 +181,7 @@ export default async function AboutPage() {
             alt={t('brandAlt')}
             width={150}
             height={46}
-            className="h-10 w-auto rounded bg-white px-2 py-1"
+            className="h-10 w-auto self-start rounded bg-white px-2 py-1"
           />
           <p className="text-sm text-white/60">{t('footer')}</p>
         </div>

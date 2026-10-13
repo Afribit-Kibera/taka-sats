@@ -11,6 +11,10 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- Managed Kibera launch content, external member multisig → funded Blink BTC wallet → recipient
+  operating model, public `/start-community` guide and read-only `/community-setup` checklist/API.
+  Configurable community identity and explicit external/physical confirmations; no reserve keys or transfers.
+
 - **Supervisor phone setup.** `/install` and `/setup` detect standalone use, offer installation,
   request camera/location/NFC through separate gestures, and download assigned field data. Registration
   opens the new recipient's blank NFC writer. Private APIs bypass the service-worker cache, and

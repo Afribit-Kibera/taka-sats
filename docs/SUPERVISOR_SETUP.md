@@ -1,5 +1,9 @@
 # Install and run the supervisor app
 
+Afribit Africa manages Kibera using its configured Blink wallet. Members manage the reserve
+externally; supervisors collect evidence rather than funding or signing transfers. Operators use
+[community setup](COMMUNITY_SETUP.md) before starting another community.
+
 Open **https://taka.afribit.africa/install** in Chrome on an Android phone. NFC is optional. Avoid in-app
 browsers. Tap **Install app** if offered, or Chrome's menu → **Install app / Add to Home screen**.
 Open the home-screen icon and sign in once with your private staff code/setup phrase. The installed app starts

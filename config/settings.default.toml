@@ -18,6 +18,20 @@ locales        = ["en", "sw", "sheng"]   # first-class UI locales
 default_locale = "en"                    # must be one of `locales`
 public_base_url = "https://taka.afribit.africa"  # where this deployment is served (no trailing slash); builds credential URLs
 
+[community]
+# One community per deployment. A new community uses its own deployment and Blink account/key.
+name = "Kibera"
+operator = "Afribit Africa"
+production_staff_prefix = "LIVE"         # operator-issued codes, not disposable TEST/AUTO accounts
+field_checks_confirmed = false           # owner confirms real Android/scale/permission/offline sample
+
+[community.reserve]
+# External member multisig metadata only. Never put seeds, keys or wallet descriptors here.
+wallet_label = "BlueWallet Vault"       # planned for Kibera; not created/confirmed by the app
+required_signatures = 2                  # planned 2-of-3; 0/0 also supports an unconfigured reserve
+total_signers = 3
+setup_confirmed = false                 # operator attestation, not an on-chain proof or a payment gate
+
 [custody]
 # 'byo'         = collector brings their own wallet (Blink Paycode / Lightning Address).
 #                 This is the shipped, non-custodial default (D-05).

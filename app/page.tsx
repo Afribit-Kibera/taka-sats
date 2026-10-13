@@ -22,8 +22,10 @@ import { PhoneFrame, ScreenReview } from '@/components/public/FieldScreens';
 import { ImpactStats } from '@/components/public/ImpactStats';
 import { StepShowcase } from '@/components/public/StepShowcase';
 import { SOURCE_CODE_URL, VERIFICATION_PROTOCOL_URL } from '@/lib/site';
+import { getSettings } from '@/lib/config';
+import { CommunityFunding } from '@/components/public/CommunityFunding';
 
-const SETUP_GUIDE_URL = `${SOURCE_CODE_URL}/blob/main/docs/GETTING_STARTED.md`;
+const SETUP_GUIDE_URL = '/start-community';
 
 const focusRing =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
@@ -33,6 +35,7 @@ const secondaryButton = `inline-flex min-h-14 items-center justify-center gap-2 
 
 export default async function Home() {
   const t = await getTranslations('Home');
+  const community = getSettings().community;
 
   const steps = [
     {
@@ -131,17 +134,17 @@ export default async function Home() {
         <div className="relative z-10">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] shadow-[0_1px_2px_rgb(20_20_20/0.06)]">
             <span className="size-2 rounded-full bg-fill-bitcoin" aria-hidden="true" />{' '}
-            {t('eyebrow')}
+            {t('eyebrow', { name: community.name })}
           </div>
           <h1 className="max-w-3xl font-display text-5xl font-bold leading-[0.98] tracking-[-0.055em] sm:text-7xl lg:text-[5.2rem]">
             {t('heroLine1')} <span className="block text-primary">{t('heroLine2')}</span>{' '}
             {t('heroLine3')}
           </h1>
           <p className="mt-7 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
-            {t('description')}
+            {t('description', { name: community.name, operator: community.operator })}
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link href="/login" className={primaryButton}>
+            <Link href="/install" className={primaryButton}>
               {t('launchApp')} <ArrowRight aria-hidden="true" className="size-5" />
             </Link>
             <a href="#how-it-works" className={secondaryButton}>
@@ -316,6 +319,10 @@ export default async function Home() {
         </div>
       </section>
 
+      <div className="mx-auto w-full max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
+        <CommunityFunding />
+      </div>
+
       <section id="run" className="scroll-mt-8 bg-[var(--brand-ink)] text-white">
         <div className="mx-auto grid w-full max-w-7xl gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_0.9fr] lg:px-10 lg:py-28">
           <div>
@@ -349,20 +356,14 @@ export default async function Home() {
               </a>
             </div>
           </div>
-          <pre
-            tabIndex={0}
-            className="self-center overflow-x-auto rounded-xl border border-white/15 bg-black/40 p-6 font-mono text-sm leading-7 text-white/85"
-          >
-            <code>
-              {`git clone ${SOURCE_CODE_URL}.git
-cd taka-sats
-cp .env.example .env
-docker compose \\
-  -f docker/docker-compose.yml \\
-  -f docker/docker-compose.https.yml \\
-  --env-file .env up -d --build`}
-            </code>
-          </pre>
+          <ol className="grid self-center gap-5 rounded-xl border border-white/15 bg-black/40 p-6">
+            {['runStep1', 'runStep2', 'runStep3', 'runStep4'].map((key, index) => (
+              <li key={key} className="flex gap-3 text-white/85">
+                <span className="font-mono">0{index + 1}</span>
+                <span>{t(key)}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -387,7 +388,7 @@ docker compose \\
               alt={t('brandAlt')}
               width={150}
               height={46}
-              className="h-10 w-auto rounded bg-white px-2 py-1"
+              className="h-10 w-auto self-start rounded bg-white px-2 py-1"
             />
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t('footer')}>
               <Link href="/about" className={`text-white/80 hover:text-white ${focusRing}`}>
