@@ -13,6 +13,12 @@
 
 ## 0. How to use this document
 
+Private field receipt (2026-10-15): Activity rows use a compact existing Button/Lucide receipt action.
+The receipt composes the existing Vaul mobile sheet, native description, definition list and sticky
+download/close footer. Readable at320px/200%text/short height, keyboard focus enters/restores through
+the sheet, and no animation dependency is added. Estimated reward, cached sync state, privacy and
+dispute text stay explicit. No public sharing, payment-success animation or verification badge.
+
 Global documentation clarification (2026-10-15): product copy leads with waste-work records/evidence/
 earnings; Kibera is an explicit implementation/app link and local statistics scope. `/communities`
 lists the first deployment and labels shared reporting as proposed. `/docs` and `/docs/[slug]` compose

@@ -25,6 +25,14 @@ controls precede credible cross-community impact totals. The [network proposal](
 explicitly unimplemented and opt-in; independent data/funding/operations remain local. See
 [purpose](PURPOSE.md), [rights](OPEN_SOURCE.md) and [field integrity](FIELD_INTEGRITY.md).
 
+Private receipt slice (2026-10-15): signed-in field Activity may show/download one local collection
+acknowledgement offline. It uses explicit capture fields, the collector's cached public code when
+available, configured community/operator, device capture time, estimated sats and local sync state.
+It excludes names, wallets, GPS, photos, actor IDs, server rejection detail and other collectors.
+Server acknowledgement does not imply review, settlement or recycling. The estimate is never recomputed
+as an actual payout. The export has no payment/identity/sync authority and is not a public portfolio
+or independently verifiable server receipt. No new API, migration or operational tuning key is required.
+
 ### API-first operator access clarification (2026-10-06)
 
 The supervisor field app is the primary operational UI. Supervisors register collectors and manage

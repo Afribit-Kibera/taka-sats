@@ -1548,5 +1548,37 @@
     "networkBody": "The proposed network will consolidate opted-in communities with reporting periods, source identity, evidence levels and freshness visible. It is not connected yet, and no other community’s figures are included. Anyone can run the software without joining.",
     "start": "Run your own community",
     "plan": "Read the network proposal"
+  },
+  "CollectionReceipt": {
+    "title": "Collection receipt",
+    "details": "Collection details",
+    "open": "Receipt",
+    "openFor": "Open receipt for collection {reference}",
+    "community": "Community",
+    "operator": "Operator",
+    "reference": "Collection reference",
+    "collector": "Collector code",
+    "unknownCollector": "Not available on this phone",
+    "recordedAt": "Capture time (device clock, UTC)",
+    "material": "Material",
+    "weight": "Recorded weight",
+    "kg": "{value} kg",
+    "estimate": "Estimated reward at capture",
+    "sats": "≈ {value} sats",
+    "sync": "Sync status on this phone",
+    "states": {
+      "queued": "Saved on this phone; waiting to send",
+      "syncing": "Sending; server acknowledgement not yet received",
+      "confirmed": "Server acknowledgement saved on this phone",
+      "needs_attention": "Needs attention; not confirmed by the server",
+      "failed": "Not confirmed; sending needs to be retried"
+    },
+    "limitation": "A copy of one collection recorded on this phone. It does not verify payment, review or physical recycling.",
+    "paymentNotice": "The reward is an estimate, not an amount paid or promised. Payment status and any later corrections are not checked in this receipt.",
+    "privateNotice": "Private receipt. Share only with this collector or an authorized operator. It contains a collection reference and may contain a collector code.",
+    "disputeNotice": "If the weight or reward looks wrong, keep the collection reference and ask the community operator for a review.",
+    "download": "Save text",
+    "close": "Close",
+    "downloadError": "Save failed. Try again."
   }
 }

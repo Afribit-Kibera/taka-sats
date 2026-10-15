@@ -11,6 +11,14 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- Private offline collection receipts in field Activity: one selected record, matched cached collector
+  code, device capture time, recorded weight, estimated sats and explicit sync status. Mobile sheet and
+  readable text download; excludes names, wallets, GPS, photos and other records. No payment/recycling
+  verification, new API or payment authority. See `docs/RECORDS_AND_CLAIMS.md`.
+
+- Workspace lint/type checks exclude private `internal/` helpers and archived release copies, avoiding
+  imports from stale snapshots during local development. Application source and e2e checks remain enabled.
+
 - Global waste-work purpose, first-implementation/local-statistics labels, public Docs and community
   pages; fork-to-production, open-source independence, portfolios/claims, field integrity, benchmark
   and an explicitly proposed multi-community reporting design. Private session proof exports remain

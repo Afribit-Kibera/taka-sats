@@ -1,5 +1,17 @@
 # Security Policy
 
+## Private collection acknowledgements (2026-10-15)
+
+Field Activity's local receipt is a read-only projection of one existing cached event. Only the
+reference, matching cached public collector code, time/material/weight/estimate/sync state and configured
+community/operator are displayed/exported. Names, wallets, photo data/URLs, location, actor IDs, raw
+server errors and other collection rows are excluded. The text file is private; it is not a public
+transparency export. Line/control/bidi characters are stripped from text fields to prevent forged lines;
+the filename accepts only UUID references and otherwise uses a fixed fallback. Blob URLs are released.
+There is no new endpoint, server signature or authority to pay, sync, approve or change a destination.
+Local sync acknowledgement never establishes payment/recycling. Local records can be altered on a
+compromised phone; this receipt is not cryptographic proof and does not fetch corrections or settlement.
+
 ## Public documentation and independent operation (2026-10-15)
 
 The Docs renderer reads only an explicit committed public-file allowlist, skips raw HTML/MDX and

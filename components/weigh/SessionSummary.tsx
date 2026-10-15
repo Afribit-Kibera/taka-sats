@@ -9,6 +9,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/console/api';
 import { StatusPill } from '@/components/ui/status';
+import { CollectionReceipt } from './CollectionReceipt';
+import { collectionReceipt } from '@/lib/receipts/collection';
+import type { CachedCollector } from '@/types/domain';
 import {
   drainEventQueue,
   drainPhotoQueue,
@@ -28,7 +31,15 @@ const fmt = new Intl.NumberFormat('en');
  * the stable code) and a Try again button that re-queues it once the cause is fixed. "Sync now"
  * drains the outboxes directly and says what happened, including that the person is signed out.
  */
-export function SessionSummary({ sessionId }: { readonly sessionId?: string }) {
+export function SessionSummary({
+  sessionId,
+  community,
+  operator,
+}: {
+  readonly sessionId?: string;
+  readonly community: string;
+  readonly operator: string;
+}) {
   const t = useTranslations('SessionSummary');
   const tStatus = useTranslations('Status');
   const tSync = useTranslations('Sync');
@@ -36,6 +47,7 @@ export function SessionSummary({ sessionId }: { readonly sessionId?: string }) {
   const [payoutOf, setPayoutOf] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<Summary | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [collectors, setCollectors] = useState<Record<string, CachedCollector>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -44,10 +56,17 @@ export function SessionSummary({ sessionId }: { readonly sessionId?: string }) {
       setSummary(s);
       const ids = [...new Set(s.events.map((e) => e.collectorId))];
       const entries = await Promise.all(
-        ids.map(async (id) => [id, (await getCachedCollector(id))?.alias] as const),
+        ids.map(async (id) => [id, await getCachedCollector(id)] as const),
       );
       setNames(
-        Object.fromEntries(entries.filter((entry): entry is [string, string] => Boolean(entry[1]))),
+        Object.fromEntries(
+          entries.flatMap(([id, collector]) => (collector ? [[id, collector.alias]] : [])),
+        ),
+      );
+      setCollectors(
+        Object.fromEntries(
+          entries.flatMap(([id, collector]) => (collector ? [[id, collector]] : [])),
+        ),
       );
     });
   }, [sessionId]);
@@ -202,6 +221,11 @@ export function SessionSummary({ sessionId }: { readonly sessionId?: string }) {
                     />
                   ) : null}
                 </div>
+                <CollectionReceipt
+                  receipt={collectionReceipt(e, collectors[e.collectorId])}
+                  community={community}
+                  operator={operator}
+                />
                 {attention ? (
                   <div className="mt-2 space-y-2">
                     <p className="text-sm" data-testid="attention-reason">

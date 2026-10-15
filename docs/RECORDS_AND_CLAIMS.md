@@ -26,6 +26,20 @@ verification result and manifest. It is a useful **private** starting point, not
 portfolio: it includes stable collector codes, exact timestamps and individual payment values.
 A complete privacy-reviewed, multi-session portfolio/receipt experience is not implemented yet.
 
+### Private field collection receipt
+
+In the field app's **Activity**, each locally saved collection has a **Receipt** action. This version
+can show and download a text acknowledgement offline, using the record already stored on the phone.
+It contains one collection reference, a cached public collector code when available, community/operator,
+device capture time in UTC, material, recorded kilograms, estimated sats and the phone's sync state.
+Names, wallet details, GPS, photos and other collectors' rows are excluded. Treat the exported reference
+and code as private; share with the selected collector or an authorized operator, not a public feed.
+
+This is a capture acknowledgement, not a payment receipt or a recycling certificate. Even a saved
+server acknowledgement does not establish review or settlement. Later corrections and current payout
+status are not fetched by this receipt. Preserve the reference when asking the operator for a review.
+An authoritative server snapshot, settled amount and group portfolio remain separate work.
+
 - Operator, community, reporting period/timezone, source version and report generation time.
 - Material-level recorded/reviewed/paid/accepted weights and evidence coverage, with unverified totals
   kept separate. Use net weights and document tare, moisture, contamination and stock movements.

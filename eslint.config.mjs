@@ -36,6 +36,8 @@ const eslintConfig = defineConfig([
     'playwright-report/**',
     '.playwright-cli/**',
     'output/playwright/**',
+    // Private runbooks, QA helpers and archived release copies are not application source.
+    'internal/**',
   ]),
 ]);
 

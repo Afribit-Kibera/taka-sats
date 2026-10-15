@@ -944,6 +944,18 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 
 ## 8. Changelog for the frontend
 
+### 2026-10-15 - Private offline capture receipt
+
+Field `/session` Activity adds a local **Receipt** sheet and plain-text download for one selected
+IndexedDB event. The page passes existing `community.name`/`community.operator` to the client.
+Receipt projection: collection reference, matched cached public collector code or unavailable,
+device UTC capture time, material, kilograms, captured **estimated** sats and local sync state.
+`confirmed` only means the phone stored a server acknowledgement; it is never translated into paid.
+No actual payout amount/status, ledger proof, photo, wallet, GPS, names, actor IDs, raw rejection reason
+or other records are exported. No request or queue mutation is made by opening/downloading a receipt.
+Existing layout/auth/bootstrap gates remain; no API/response/schema/config-key change. This is not the
+future authoritative receipt or public portfolio contract.
+
 ### 2026-10-15 - Global project Docs and implementation scope
 
 Public `/docs`, `/docs/[slug]`, `/communities` and `/start-community` are database-free frontend

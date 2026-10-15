@@ -60,3 +60,15 @@ never an offline cache; pending evidence lives in IndexedDB.
 Before handing out a batch, exercise one actual phone/card/scale sample: permission prompts, write/readback,
 identity lookup, camera/photo, location, airplane-mode capture and reconnection. Desktop simulation verifies
 software behavior; it cannot certify an Android NFC antenna, a chip or field-photo accuracy.
+
+## Give a collector a private receipt
+
+Open **Activity**, find their collection, then tap **Receipt**. Read the weight, collector code and
+capture time with them. **Save text** saves that one record and works offline after the Activity
+page is available. Keep the reference if they dispute a reading. Share the file only with that collector
+or an authorized operator; public codes and exact timestamps can identify someone locally.
+
+The reward shown is the estimate saved at capture. The receipt does not check actual payment, later
+corrections, evidence review or physical recycling. **Server acknowledgement** refers to sync only.
+For payment questions, ask the operator to check the current payout. Do not clear queued work to fix a
+download failure: the receipt remains readable, and you can retry the download.
