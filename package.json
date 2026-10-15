@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "license": "AGPL-3.0-only",
-  "homepage": "https://github.com/novyrix/taka-sats#readme",
+  "homepage": "https://github.com/Afribit-Kibera/taka-sats#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/novyrix/taka-sats.git"
+    "url": "git+https://github.com/Afribit-Kibera/taka-sats.git"
   },
   "bugs": {
-    "url": "https://github.com/novyrix/taka-sats/issues"
+    "url": "https://github.com/Afribit-Kibera/taka-sats/issues"
   },
   "scripts": {
     "dev": "next dev",
@@ -68,6 +68,8 @@
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
     "serwist": "^9.5.12",
     "smol-toml": "^1.9.0",
     "tailwind-merge": "^3.6.0",

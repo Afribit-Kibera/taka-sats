@@ -14,6 +14,17 @@
 
 ## 0. How to use this document
 
+### Global purpose and independent-community clarification (2026-10-15)
+
+The product records community waste work with evidence and supports collector earnings; a useful
+work portfolio is a core direction. Kibera/Afribit Africa is the first implementation, not exclusive
+product scope. AGPL-compliant independent operation needs no central permission or network membership.
+Public Docs cover fork-to-production operation. Current stats remain one-deployment records; no
+global figures or full portfolio/records-only capability are implied. Physical lot/stock/correction
+controls precede credible cross-community impact totals. The [network proposal](FEDERATION.md) is
+explicitly unimplemented and opt-in; independent data/funding/operations remain local. See
+[purpose](PURPOSE.md), [rights](OPEN_SOURCE.md) and [field integrity](FIELD_INTEGRITY.md).
+
 ### API-first operator access clarification (2026-10-06)
 
 The supervisor field app is the primary operational UI. Supervisors register collectors and manage

@@ -56,6 +56,12 @@ export default async function AboutPage() {
           />
         </Link>
         <nav className="flex items-center gap-3" aria-label={t('primaryNavigation')}>
+          <Link
+            href="/docs"
+            className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline"
+          >
+            {t('docs')}
+          </Link>
           <a
             href={SOURCE_CODE_URL}
             className={`hidden font-display text-sm font-medium sm:inline-flex ${focusRing}`}
@@ -66,7 +72,8 @@ export default async function AboutPage() {
             href="/login"
             className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 font-display text-sm font-bold text-primary-foreground transition-colors hover:bg-[var(--brand-green-deep)] ${focusRing}`}
           >
-            {t('openApp')} <ArrowRight aria-hidden="true" className="size-4" />
+            {t('openApp', { name: community.name })}{' '}
+            <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         </nav>
       </header>
@@ -79,7 +86,7 @@ export default async function AboutPage() {
           {t('title')}
         </h1>
         <p className="mt-7 text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9">
-          {t('lead', { name: community.name, operator: community.operator })}
+          {t('lead')}
         </p>
 
         <section className="mt-16" aria-labelledby="problem">
@@ -87,6 +94,19 @@ export default async function AboutPage() {
             {t('problemTitle')}
           </h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">{t('problemBody')}</p>
+        </section>
+
+        <section className="mt-16 space-y-4" aria-labelledby="purpose">
+          <h2 id="purpose" className="font-display text-2xl font-bold">
+            {t('purposeTitle')}
+          </h2>
+          <p className="text-lg leading-8 text-muted-foreground">{t('purposeBody')}</p>
+          <Link
+            href="/docs/purpose"
+            className="inline-flex min-h-11 items-center text-primary underline underline-offset-4"
+          >
+            {t('purposeLink')}
+          </Link>
         </section>
 
         <section className="mt-16" aria-labelledby="how">
@@ -156,7 +176,9 @@ export default async function AboutPage() {
           <h2 id="status" className="font-display text-2xl font-bold tracking-[-0.02em]">
             {t('statusTitle')}
           </h2>
-          <p className="mt-4 text-lg leading-8 text-muted-foreground">{t('statusBody')}</p>
+          <p className="mt-4 text-lg leading-8 text-muted-foreground">
+            {t('statusBody', { name: community.name, operator: community.operator })}
+          </p>
         </section>
 
         <section className="mt-16" aria-labelledby="who">

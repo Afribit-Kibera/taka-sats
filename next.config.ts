@@ -12,6 +12,9 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
  */
 const PUBLIC_PATHS = [
   'about(?:/|$)',
+  'docs(?:/|$)',
+  'communities(?:/|$)',
+  'start-community(?:/|$)',
   '_next/',
   String.raw`robots\.txt$`,
   String.raw`sitemap\.xml$`,
@@ -105,6 +108,15 @@ const nextConfig: NextConfig = {
   // ships with every server bundle on both deploy paths.
   outputFileTracingIncludes: {
     '/**/*': ['./config/**/*'],
+    '/docs/*': [
+      './docs/PURPOSE.md',
+      './docs/FORK_TO_PRODUCTION.md',
+      './docs/OPEN_SOURCE.md',
+      './docs/RECORDS_AND_CLAIMS.md',
+      './docs/FIELD_INTEGRITY.md',
+      './docs/FEDERATION.md',
+      './docs/LANDSCAPE.md',
+    ],
   },
   // Keep the canonical browser origin on Vercel while the stateful parts run on the VM. Vercel
   // serves only the public pages (home, about, crawler and icon files) and its own static assets.

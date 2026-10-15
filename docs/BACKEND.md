@@ -944,6 +944,15 @@ no real sats are sent" banner. Fetch it once on load; it does not change while t
 
 ## 8. Changelog for the frontend
 
+### 2026-10-15 - Global project Docs and implementation scope
+
+Public `/docs`, `/docs/[slug]`, `/communities` and `/start-community` are database-free frontend
+routes and served by Vercel when split-origin proxying is enabled. Docs render only approved public
+Markdown files, not arbitrary repository paths. No API/auth/payment response or enforcement changed.
+`/api/v1/stats/summary` is still **one deployment's** accepted-record/settled-payment summary;
+the site labels that scope and unavailable data explicitly. No network aggregate or certified recycling
+metric has been added. See [network proposal](FEDERATION.md) and [claims](RECORDS_AND_CLAIMS.md).
+
 ### 2026-10-13 - Managed-community launch
 
 `GET /api/v1/community/readiness` requires `treasury:read` (admin/hub lead), including normal

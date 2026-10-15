@@ -1,5 +1,14 @@
 # Security Policy
 
+## Public documentation and independent operation (2026-10-15)
+
+The Docs renderer reads only an explicit committed public-file allowlist, skips raw HTML/MDX and
+images, and restricts Markdown links. Private plans/credentials are excluded from the Docker context;
+only approved public documents are traced. Database-backed/API/auth routes retain VM forwarding and
+authorization. Global copy does not certify physical uniqueness or label local data network impact.
+Staff setup-file instructions use the configured passkey origin; recovery/password/epoch rules are
+unchanged. No staff reset, money mutation or federation fetcher is introduced by these changes.
+
 ## Phone passkey changes (2026-10-08)
 
 - WebAuthn requires discoverable credentials, user presence and verification; signatures, challenge,

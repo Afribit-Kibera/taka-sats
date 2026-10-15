@@ -8,6 +8,17 @@ partner organisations. Developers will find the exact behaviour in
 
 ## The principle
 
+### Current product and field limits (2026-10-15)
+
+[Field integrity](FIELD_INTEGRITY.md) and [records/claims](RECORDS_AND_CLAIMS.md) clarify the limits
+below. Identical bytes are detected; a fresh photo/new UUID of the same sack is not prevented.
+Risk-based mode allows eligible automatic payouts and routes flags/exceptions to distinct review;
+universal/first-payment signoff descriptions below apply only to legacy policy. A phone content hash
+is not a supervisor's cryptographic signature. OCR is implemented as derived display evidence, not
+full V1/material/custody verification. Reconciliation needs real receipts and a manual cadence.
+Session proof packs contain stable collector codes, exact times and individual payment values: keep
+them private or transform them through a reviewed disclosure process before public sharing.
+
 ### Current scale-display audit (2026-10-06)
 
 Configured OpenRouter/Mistral reads the private scale photo without being told the entered kg.

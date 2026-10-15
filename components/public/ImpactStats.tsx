@@ -21,12 +21,18 @@ function formatNumber(value: number, maximumFractionDigits = 0): string {
 export function ImpactStats() {
   const t = useTranslations('Home');
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     void fetch('/api/v1/stats/summary', { signal: controller.signal })
-      .then(async (response) => (response.ok ? ((await response.json()) as Summary) : null))
+      .then(async (response) => {
+        if (!response.ok) throw new Error('summary_unavailable');
+        return (await response.json()) as Summary;
+      })
       .then(setSummary)
-      .catch(() => undefined);
+      .catch(() => {
+        if (!controller.signal.aborted) setUnavailable(true);
+      });
     return () => controller.abort();
   }, []);
 
@@ -35,6 +41,7 @@ export function ImpactStats() {
     [summary],
   );
   const sats = summary?.satsPaid;
+  const pending = unavailable ? t('statsUnavailable') : '...';
   const satsLabel =
     typeof sats === 'number'
       ? formatNumber(sats)
@@ -43,22 +50,22 @@ export function ImpactStats() {
         : t('privateValue');
   const stats = [
     {
-      value: summary ? formatNumber(kilograms, 1) : '...',
-      unit: t('kgUnit'),
+      value: summary ? formatNumber(kilograms, 1) : pending,
+      unit: summary ? t('kgUnit') : '',
       label: t('statMaterial'),
     },
     {
-      value: summary ? formatNumber(summary.collectors) : '...',
+      value: summary ? formatNumber(summary.collectors) : pending,
       unit: '',
       label: t('statCollectors'),
     },
     {
-      value: summary ? satsLabel : '...',
+      value: summary ? satsLabel : pending,
       unit: typeof sats === 'number' || sats ? t('satsUnit') : '',
       label: t('statPayouts'),
     },
     {
-      value: summary ? formatNumber(summary.ledger.entries) : '...',
+      value: summary ? formatNumber(summary.ledger.entries) : pending,
       unit: '',
       label: t('statLedger'),
     },
@@ -68,7 +75,7 @@ export function ImpactStats() {
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
       {stats.map((stat) => (
         <div key={stat.label} className="bg-card px-5 py-6 sm:px-7">
-          <p className="font-mono text-2xl font-bold tabular-nums sm:text-3xl">
+          <p className="break-words font-mono text-xl font-bold tabular-nums sm:text-3xl">
             {stat.value}
             {stat.unit ? <span className="ml-1 text-base text-primary">{stat.unit}</span> : null}
           </p>

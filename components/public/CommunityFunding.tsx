@@ -32,7 +32,7 @@ export async function CommunityFunding() {
       </ol>
       <p className="text-sm text-muted-foreground">{t('note')}</p>
       <Link
-        href="/start-community"
+        href="/docs/run-your-community"
         className="inline-flex min-h-11 items-center gap-2 font-display font-bold text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
       >
         {t('guide')}

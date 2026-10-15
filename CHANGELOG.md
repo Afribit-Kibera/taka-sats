@@ -11,6 +11,11 @@ All notable changes to this project are recorded here. The format follows
 
 ### Added
 
+- Global waste-work purpose, first-implementation/local-statistics labels, public Docs and community
+  pages; fork-to-production, open-source independence, portfolios/claims, field integrity, benchmark
+  and an explicitly proposed multi-community reporting design. Private session proof exports remain
+  distinct from public portfolios. Docker excludes private files; setup-file URLs use the operator's origin.
+
 - Managed Kibera launch content, external member multisig → funded Blink BTC wallet → recipient
   operating model, public `/start-community` guide and read-only `/community-setup` checklist/API.
   Configurable community identity and explicit external/physical confirmations; no reserve keys or transfers.

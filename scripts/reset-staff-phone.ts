@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { closeSync, fsyncSync, openSync, writeSync } from 'node:fs';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { resetStaffPhoneAccess } from '@/lib/auth/bootstrap';
+import { getSettings } from '@/lib/config';
 import { closeDb, getDb } from '@/lib/db/client';
 
 const flag = (name: string) => {
@@ -31,7 +32,7 @@ async function main() {
     const credentials = await resetStaffPhoneAccess(getDb(), codes, (prepared) => {
       writeSync(
         fd,
-        `# Taka Sats private setup phrases. Created ${new Date().toISOString()}\n# Use https://taka.afribit.africa/login. Staff code + phrase once, then phone security.\n# Phrases expire ${prepared[0]!.expiresAt.toISOString()}; disabled after successful enrollment.\n# Recovery revokes old passkeys and signed-in sessions. Hand out each phrase privately.\n\n${prepared.map((c) => `${c.identifier}\t${c.password}`).join('\n')}\n`,
+        `# Taka Sats private setup phrases. Created ${new Date().toISOString()}\n# Use ${getSettings().auth.passkey_origin}/login. Staff code + phrase once, then phone security.\n# Phrases expire ${prepared[0]!.expiresAt.toISOString()}; disabled after successful enrollment.\n# Recovery revokes old passkeys and signed-in sessions. Hand out each phrase privately.\n\n${prepared.map((c) => `${c.identifier}\t${c.password}`).join('\n')}\n`,
       );
       fsyncSync(fd);
     });

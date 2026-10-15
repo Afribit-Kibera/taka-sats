@@ -1,5 +1,10 @@
 # Self-hosting Taka Sats
 
+For a new production installation, follow the maintained [fork-to-production guide](FORK_TO_PRODUCTION.md)
+first. It covers migration-before-start order, environment precedence, an independent passkey origin,
+staff enrollment and cautious payout policy. The basic commands below are infrastructure reference,
+not a complete go-live procedure. The worker is implemented, not merely a scaffold.
+
 The Docker Compose path runs the same Next.js code used by Vercel with local Postgres, MinIO, a worker process, and a Nostr relay.
 
 ## Prerequisites

@@ -3,12 +3,14 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
+import { getTranslations } from 'next-intl/server';
 
-export const alt = 'Taka Sats: verified recycling work with transparent Bitcoin payouts';
+export const alt = 'Taka Sats: community waste-work records, evidence and earnings';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function OpenGraphImage() {
+  const t = await getTranslations('Home');
   const icon = await readFile(join(process.cwd(), 'app', 'icon.png'));
   const iconDataUrl = `data:image/png;base64,${icon.toString('base64')}`;
 
@@ -49,7 +51,7 @@ export default async function OpenGraphImage() {
             textTransform: 'uppercase',
           }}
         >
-          Waste to Bitcoin · Earn first
+          {t('eyebrow')}
         </div>
         <div
           style={{
@@ -62,12 +64,12 @@ export default async function OpenGraphImage() {
             marginTop: 34,
           }}
         >
-          <span>Recycling work,</span>
-          <span style={{ color: '#3E6336' }}>verified.</span>
-          <span>Bitcoin paid.</span>
+          <span>{t('heroLine1')}</span>
+          <span style={{ color: '#3E6336' }}>{t('heroLine2')}</span>
+          <span>{t('heroLine3')}</span>
         </div>
         <div style={{ color: '#68645E', display: 'flex', fontSize: 27, marginTop: 34 }}>
-          Offline-first collection · Linked evidence · Transparent payouts
+          {t('pointEvidence')}
         </div>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}

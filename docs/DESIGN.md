@@ -13,7 +13,14 @@
 
 ## 0. How to use this document
 
-Managed launch (2026-10-13): public content identifies Kibera and its managed Blink operating model.
+Global documentation clarification (2026-10-15): product copy leads with waste-work records/evidence/
+earnings; Kibera is an explicit implementation/app link and local statistics scope. `/communities`
+lists the first deployment and labels shared reporting as proposed. `/docs` and `/docs/[slug]` compose
+existing typography/tokens/links into an accessible document shell; tables/code scroll inside the
+article. Source Markdown is English with an explicit translation note; shell keys have locale placeholders.
+Docs are server rendered from an explicit public-file allowlist, with no raw HTML/MDX or image loading.
+
+Managed launch (2026-10-13, copy refined above): deployment content identifies its managed Blink model.
 CommunityFunding composes existing tokens/Lucide icons into three funding stages; `/start-community`
 is a responsive five-step guide. `/community-setup` uses console Panel/DataState/Button/KeyValue and
 explicit checked/needs-setup/unknown text, without wallets, seed-entry fields or payment controls.
@@ -353,6 +360,11 @@ This is the table implementors work from. **If a row exists, use it. Do not buil
 ---
 
 ## 7. Library evaluations (with licences)
+
+Docs-only additions (2026-10-15): `react-markdown@10.1.0` (MIT) and `remark-gfm@4.0.1` (MIT).
+They render committed Markdown/tables in Server Components; no parser is added to the supervisor
+client entry. Raw HTML/MDX/images are disabled, no remote content is loaded, and navigation/files use
+an explicit allowlist. Existing brand tokens, semantic headings, links and scrollable tables/code apply.
 
 All licences below are permissive and compatible with the project's **AGPL-3.0-only** distribution. **Pin exact versions; re-verify the API and licence at adoption time** (config-first / verify ethos).
 

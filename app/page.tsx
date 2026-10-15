@@ -25,7 +25,7 @@ import { SOURCE_CODE_URL, VERIFICATION_PROTOCOL_URL } from '@/lib/site';
 import { getSettings } from '@/lib/config';
 import { CommunityFunding } from '@/components/public/CommunityFunding';
 
-const SETUP_GUIDE_URL = '/start-community';
+const SETUP_GUIDE_URL = '/docs/run-your-community';
 
 const focusRing =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
@@ -96,7 +96,13 @@ export default async function Home() {
             priority
           />
         </Link>
-        <nav className="flex items-center gap-5" aria-label={t('primaryNavigation')}>
+        <nav className="flex items-center gap-3 sm:gap-5" aria-label={t('primaryNavigation')}>
+          <Link
+            href="/docs"
+            className={`inline-flex min-h-11 items-center text-sm font-medium ${focusRing}`}
+          >
+            {t('docsNav')}
+          </Link>
           <a
             href="#how-it-works"
             className={`hidden font-display text-sm font-medium md:inline-flex ${focusRing}`}
@@ -125,7 +131,8 @@ export default async function Home() {
             href="/login"
             className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 font-display text-sm font-bold text-primary-foreground transition-colors hover:bg-[var(--brand-green-deep)] ${focusRing}`}
           >
-            {t('openApp')} <ArrowRight aria-hidden="true" className="size-4" />
+            {t('openApp', { name: community.name })}{' '}
+            <ArrowRight aria-hidden="true" className="size-4" />
           </Link>
         </nav>
       </header>
@@ -134,23 +141,29 @@ export default async function Home() {
         <div className="relative z-10">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 font-display text-xs font-bold uppercase tracking-[0.08em] shadow-[0_1px_2px_rgb(20_20_20/0.06)]">
             <span className="size-2 rounded-full bg-fill-bitcoin" aria-hidden="true" />{' '}
-            {t('eyebrow', { name: community.name })}
+            {t('eyebrow')}
           </div>
           <h1 className="max-w-3xl font-display text-5xl font-bold leading-[0.98] tracking-[-0.055em] sm:text-7xl lg:text-[5.2rem]">
             {t('heroLine1')} <span className="block text-primary">{t('heroLine2')}</span>{' '}
             {t('heroLine3')}
           </h1>
           <p className="mt-7 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
-            {t('description', { name: community.name, operator: community.operator })}
+            {t('description')}
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link href="/install" className={primaryButton}>
+            <Link href={SETUP_GUIDE_URL} className={primaryButton}>
               {t('launchApp')} <ArrowRight aria-hidden="true" className="size-5" />
             </Link>
             <a href="#how-it-works" className={secondaryButton}>
               {t('seeHow')}
             </a>
           </div>
+          <p className="mt-5 max-w-xl text-sm leading-6 text-muted-foreground">
+            {t('firstImplementation', { name: community.name, operator: community.operator })}{' '}
+            <Link href="/communities" className="text-primary underline underline-offset-4">
+              {t('communitiesNav')}
+            </Link>
+          </p>
           <ul className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
             <li className="inline-flex items-center gap-2">
               <WifiOff aria-hidden="true" className="size-4 text-primary" /> {t('pointOffline')}
@@ -207,11 +220,14 @@ export default async function Home() {
         <div className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 lg:px-10">
           <div className="mb-6 flex items-center gap-3">
             <span className="font-display text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-              {t('livePilot')}
+              {t('livePilot', { name: community.name })}
             </span>
             <span className="h-px flex-1 bg-border" aria-hidden="true" />
           </div>
           <ImpactStats />
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+            {t('statsScope')}
+          </p>
         </div>
       </section>
 
@@ -371,10 +387,13 @@ export default async function Home() {
         <div className="mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-8 px-5 py-14 sm:flex-row sm:items-center sm:px-8 lg:px-10">
           <div>
             <p className="font-display text-3xl font-bold tracking-[-0.035em]">{t('ctaTitle')}</p>
-            <p className="mt-2 text-muted-foreground">{t('ctaDescription')}</p>
+            <p className="mt-2 text-muted-foreground">
+              {t('ctaDescription', { name: community.name, operator: community.operator })}
+            </p>
           </div>
           <Link href="/login" className={primaryButton}>
-            {t('signIn')} <ArrowRight aria-hidden="true" className="size-5" />
+            {t('signIn', { name: community.name })}{' '}
+            <ArrowRight aria-hidden="true" className="size-5" />
           </Link>
         </div>
       </section>
@@ -391,6 +410,12 @@ export default async function Home() {
               className="h-10 w-auto self-start rounded bg-white px-2 py-1"
             />
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t('footer')}>
+              <Link href="/docs" className={`text-white/80 hover:text-white ${focusRing}`}>
+                {t('docsNav')}
+              </Link>
+              <Link href="/communities" className={`text-white/80 hover:text-white ${focusRing}`}>
+                {t('communitiesNav')}
+              </Link>
               <Link href="/about" className={`text-white/80 hover:text-white ${focusRing}`}>
                 {t('footerAbout')}
               </Link>

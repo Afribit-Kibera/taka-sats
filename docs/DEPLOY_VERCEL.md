@@ -1,5 +1,23 @@
 # Deploying Taka Sats to Vercel
 
+## Explicit release promotion (2026-10-15)
+
+The committed `git.deploymentEnabled=false` disables automatic Vercel Git deployments. Publishing
+current source must not automatically replace a split-origin production frontend before compatibility
+checks. CLI deployments remain available. Independent operators may configure their own tested pipeline;
+the repository does not require the first operator's Vercel project or servers.
+[Vercel Git configuration](https://vercel.com/docs/project-configuration/git-configuration).
+
+From a clean archive of the tested commit, linked to your verified project/team, stage production with
+`vercel deploy --prod --skip-domain`, test the exact deployment URL, then `vercel promote <url>`.
+Use existing CLI authentication for protected-stage requests; do not disable protection or publish
+pulled environment files. Preserve the previous deployment URL for rollback. Do not deploy an archive
+containing private operator files. The public Docs routes are database-free and served on the frontend;
+signed-in routes, API calls and VM-prefixed assets retain backend forwarding.
+
+Public-only copy/Docs changes need no database migration. Changes to operational code still require
+the VM release procedure, its tests/backups and compatible frontend promotion.
+
 ## Field-first release checks (2026-10-06)
 
 The stateful VM must run migrations 0013 and 0014 via the tools service, with a verified pre-migration database

@@ -45,6 +45,12 @@ export default async function StartCommunityPage() {
           {t('title')}
         </h1>
         <p className="max-w-3xl text-lg leading-8 text-muted-foreground">{t('intro')}</p>
+        <Button asChild>
+          <Link href="/docs/run-your-community">
+            {t('docs')}
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
       </div>
       <ol className="space-y-5">
         {['members', 'blink', 'fund', 'team', 'field'].map((key, index) => (

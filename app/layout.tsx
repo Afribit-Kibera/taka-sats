@@ -7,6 +7,7 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { PwaProvider } from '@/components/supervisor/PwaProvider';
+import { getSettings } from '@/lib/config';
 import './globals.css';
 
 const displayFont = Space_Grotesk({
@@ -33,9 +34,10 @@ const monoFont = JetBrains_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Metadata');
+  const settings = getSettings();
 
   return {
-    metadataBase: new URL('https://taka.afribit.africa'),
+    metadataBase: new URL(settings.programme.public_base_url),
     applicationName: 'Taka Sats',
     title: {
       default: t('title'),
@@ -46,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
       'Taka Sats',
       'recycling rewards',
       'Bitcoin recycling',
-      'waste collection Kenya',
+      'community waste records',
       'Lightning payments',
       'verified recycling',
     ],
@@ -75,8 +77,8 @@ export async function generateMetadata(): Promise<Metadata> {
       images: ['/opengraph-image'],
     },
     category: 'technology',
-    creator: 'Afribit Africa',
-    publisher: 'Afribit Africa',
+    creator: settings.community.operator,
+    publisher: settings.community.operator,
     formatDetection: { email: false, address: false, telephone: false },
     appleWebApp: { capable: true, title: t('title'), statusBarStyle: 'default' },
   };
@@ -99,17 +101,19 @@ export default async function RootLayout({ children }: RootLayoutProps) {
   const locale = await getLocale();
   const messages = await getMessages();
   const t = await getTranslations('Metadata');
+  const settings = getSettings();
+  const publicBase = settings.programme.public_base_url;
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Taka Sats',
-    url: 'https://taka.afribit.africa',
+    url: publicBase,
     description: t('description'),
     publisher: {
       '@type': 'Organization',
-      name: 'Afribit Africa',
-      url: 'https://afribit.africa',
-      logo: 'https://taka.afribit.africa/icon-512.png',
+      name: settings.community.operator,
+      url: publicBase,
+      logo: `${publicBase}/icon-512.png`,
     },
   };
 

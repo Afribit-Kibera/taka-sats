@@ -8,4 +8,19 @@ coverage
 !.env.example
 .agent-*
 Initial assets
-docs
+internal
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.codex
+.claude
+.cursor
+config/settings.toml
+docs/*
+!docs/PURPOSE.md
+!docs/FORK_TO_PRODUCTION.md
+!docs/OPEN_SOURCE.md
+!docs/RECORDS_AND_CLAIMS.md
+!docs/FIELD_INTEGRITY.md
+!docs/FEDERATION.md
+!docs/LANDSCAPE.md
