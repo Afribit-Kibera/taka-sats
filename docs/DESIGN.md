@@ -13,6 +13,11 @@
 
 ## 0. How to use this document
 
+Short field viewports (2026-10-22): at heights up to 32rem, the field shell uses document scrolling
+and a non-sticky sync notice. Header/status/footer remain in normal flow so enlarged text or a native
+keyboard cannot collapse the collection pane to zero. Taller screens retain the fixed-height shell.
+Receipt regression must open by a real click after applying 320?420 / 200% text; no force click or pre-open.
+
 Private field receipt (2026-10-15): Activity rows use a compact existing Button/Lucide receipt action.
 The receipt composes the existing Vaul mobile sheet, native description, definition list and sticky
 download/close footer. Readable at320px/200%text/short height, keyboard focus enters/restores through

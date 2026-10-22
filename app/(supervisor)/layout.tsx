@@ -29,7 +29,7 @@ export default async function SupervisorLayout({ children }: { readonly children
   const needsSecurity = session?.user.phoneSetupRequired;
   return (
     <FieldPermissions enabled={!needsSecurity} staffId={session!.user.id}>
-      <div className="mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-background shadow-[0_0_50px_rgb(20_20_20/0.08)]">
+      <div className="field-shell mx-auto flex h-dvh w-full max-w-lg flex-col overflow-hidden bg-background shadow-[0_0_50px_rgb(20_20_20/0.08)]">
         <ModeBanner />
         <FieldHeader communityName={getSettings().community.name} />
         {!needsSecurity ? <SyncManager /> : null}

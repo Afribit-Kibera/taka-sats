@@ -72,3 +72,17 @@ The reward shown is the estimate saved at capture. The receipt does not check ac
 corrections, evidence review or physical recycling. **Server acknowledgement** refers to sync only.
 For payment questions, ask the operator to check the current payout. Do not clear queued work to fix a
 download failure: the receipt remains readable, and you can retry the download.
+
+## Collector names, cards and payouts
+
+Collectors choose a name or alias; the app generates their unique public code. Two people may choose
+the same alias, so always check the code and receiving details. Collectors have no app passwords.
+Enter their own **Receive** address or supported LNURL-pay QR, never a guessed address or spending QR.
+
+The supported pilot pays eligible collections directly from its configured hot wallet to the verified
+receiving destination. Optional NFC tags hold identity references only. They neither store sats nor
+accumulate redeemable tokens. A reusable balance or LNURL-withdraw voucher needs a separate audited
+custody/claim/settlement implementation and actual phone/card/wallet compatibility tests.
+
+Before going offline, open Collections and Activity while connected and let the app finish loading.
+Pages that the service worker has never cached may still need a connection.

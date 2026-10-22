@@ -97,6 +97,26 @@ body {
   font-family: var(--font-display);
 }
 
+/* A short viewport (including the Android keyboard) cannot reserve space for a tall header,
+   sync notice and enlarged navigation. Let the whole field page scroll instead of starving
+   its content pane; all controls remain in normal flow and reachable at large text sizes. */
+@media (max-height: 32rem) {
+  .field-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .field-shell [data-field-scroll] {
+    flex: none;
+    overflow: visible;
+  }
+
+  .field-shell [data-testid='sync-bar'] {
+    position: static;
+  }
+}
+
 .font-mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

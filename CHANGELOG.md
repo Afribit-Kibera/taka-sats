@@ -9,6 +9,11 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- On short field viewports, allow the page to scroll so the header, sync notice and navigation cannot
+  obscure Activity actions at large text sizes. Receipt entry is tested at320Ã—420 with200%text.
+
 ### Added
 
 - Private offline collection receipts in field Activity: one selected record, matched cached collector
@@ -24,7 +29,7 @@ All notable changes to this project are recorded here. The format follows
   and an explicitly proposed multi-community reporting design. Private session proof exports remain
   distinct from public portfolios. Docker excludes private files; setup-file URLs use the operator's origin.
 
-- Managed Kibera launch content, external member multisig → funded Blink BTC wallet → recipient
+- Managed Kibera launch content, external member multisig â†’ funded Blink BTC wallet â†’ recipient
   operating model, public `/start-community` guide and read-only `/community-setup` checklist/API.
   Configurable community identity and explicit external/physical confirmations; no reserve keys or transfers.
 

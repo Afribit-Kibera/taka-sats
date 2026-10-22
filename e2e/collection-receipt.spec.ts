@@ -77,6 +77,18 @@ test('receipt follows a real offline capture and downloads one private record wi
 }) => {
   await fs.mkdir(shots, { recursive: true });
   await login(page, FIELD_SUPERVISOR, '/session');
+  // Complete the first installation before testing a navigation with the network disabled.
+  // A page visited before the worker takes control is not guaranteed to be cached.
+  if (process.env.E2E_WITH_SERVICE_WORKER === '1') {
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+    });
+    if (!(await page.evaluate(() => !!navigator.serviceWorker.controller))) await page.reload();
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+    await page.goto('/session');
+  }
+  await expect(page.getByText('Nothing recorded yet.', { exact: true })).toBeVisible();
+  await page.waitForLoadState('networkidle');
   await page.goto('/weigh');
   await expect(page.getByRole('textbox', { name: 'Name, group or public code' })).toBeVisible();
   await context.setOffline(true);
@@ -199,10 +211,8 @@ test('receipt mobile sheet reflows, supports keyboard focus, and recovers from d
     await expect(trigger).toBeFocused();
   }
   await page.setViewportSize({ width: 320, height: 420 });
-  await trigger.click();
-  // Exercise zoom while the sheet is open. The underlying field shell's combined short-height/
-  // 200%-text touch obstruction is a separately logged existing layout issue, not bypassed here.
   await page.addStyleTag({ content: 'html { font-size: 200%; }' });
+  await trigger.click({ timeout: 10000 });
   const sheet = page.getByTestId('collection-receipt');
   expect(await sheet.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   await expect(sheet.getByRole('button', { name: 'Save text', exact: true })).toBeInViewport({
