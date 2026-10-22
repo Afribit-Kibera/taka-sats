@@ -13,6 +13,12 @@ The Docker Compose path runs the same Next.js code used by Vercel with local Pos
 - Docker Compose v2 or newer
 - Git
 
+For slow build networks, the Dockerfile accepts the build-only `NODE_OPTIONS` argument. For example,
+pass `--build-arg NODE_OPTIONS="--network-family-autoselection-attempt-timeout=2000 --dns-result-order=ipv4first"`
+to `docker compose build`. This leaves runtime Node options unchanged. It does not disable TLS,
+lockfile integrity or package supply-chain checks. Use host build networking only when your own
+infrastructure requires it; keep runtime networking on the normal Compose network.
+
 ## Start the default stack
 
 ```powershell

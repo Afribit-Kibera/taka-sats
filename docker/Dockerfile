@@ -1,4 +1,6 @@
 FROM node:24.20.0-alpine AS base
+# Optional build-only network tuning; ARG is not persisted in runtime image environments.
+ARG NODE_OPTIONS
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
